@@ -30,42 +30,33 @@ func Unpack(input string) (string, error) {
 	for _, c := range input {
 		switch {
 		// Check slashy
-		case c == '\\':
+		case c == '\\' && !isSlashy:
+			isSlashy = true
+		case isSlashy && (c == '\\' || (c >= '0' && c <= '9')):
+			r = append(r, c)
 			isDigit = false
-			if isSlashy {
-				isSlashy = false
-				r = append(r, c)
-			} else {
-				isSlashy = true
-			}
-
+			isSlashy = false
 		// Check any 0-9
-		case c >= '0' && c <= '9':
-			if isSlashy {
-				r = append(r, c)
-				isSlashy = false
-			} else {
-				count := strDigits[c]
+		case (c >= '0' && c <= '9') && !isSlashy:
+			count := strDigits[c]
 
-				if last == 0 {
-					return "", ErrInvalidString
-				}
-
-				if isDigit {
-					return "", ErrInvalidString
-				}
-
-				if count > 0 {
-					r = append(r, GenerateRuneSlice(last, count)...)
-				} else {
-					r = r[:len(r)-1]
-				}
-
-				isDigit = true
+			if last == 0 {
+				return "", ErrInvalidString
 			}
 
+			if isDigit {
+				return "", ErrInvalidString
+			}
+
+			if count > 0 {
+				r = append(r, GenerateRuneSlice(last, count)...)
+			} else {
+				r = r[:len(r)-1]
+			}
+
+			isDigit = true
 		default:
-			if isSlashy {
+			if last == '\\' {
 				return "", ErrInvalidString
 			}
 
