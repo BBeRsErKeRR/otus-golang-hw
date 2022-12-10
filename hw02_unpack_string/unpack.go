@@ -29,7 +29,6 @@ func Unpack(input string) (string, error) {
 
 	for _, c := range input {
 		switch {
-			
 		// Check slashy
 		case c == '\\':
 			isDigit = false
