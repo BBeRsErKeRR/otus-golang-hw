@@ -8,13 +8,13 @@ var ErrInvalidString = errors.New("invalid string")
 
 var strDigits = map[rune]int{'0': 0, '1': 1, '2': 2, '3': 3, '4': 4, '5': 5, '6': 6, '7': 7, '8': 8, '9': 9}
 
-func GenerateRuneSlice(char rune, count int) []rune {
+func UnpackCharacter(resultString []rune, char rune, count int) []rune {
 	// Generate n-time rune
-	r := []rune{}
+	resultString = append(make([]rune, 0, len(resultString)+count-1), resultString...)
 	for i := 1; i < count; i++ {
-		r = append(r, char)
+		resultString = append(resultString, char)
 	}
-	return r
+	return resultString
 }
 
 func Unpack(input string) (string, error) {
@@ -49,7 +49,7 @@ func Unpack(input string) (string, error) {
 			}
 
 			if count > 0 {
-				r = append(r, GenerateRuneSlice(last, count)...)
+				r = UnpackCharacter(r, last, count)
 			} else {
 				r = r[:len(r)-1]
 			}
