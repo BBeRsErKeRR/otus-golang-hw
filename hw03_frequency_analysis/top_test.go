@@ -80,3 +80,39 @@ func TestTop10(t *testing.T) {
 		}
 	})
 }
+
+func TestWithShortText(t *testing.T) {
+	tests := []struct {
+		desc     string
+		input    string
+		expected []string
+	}{
+		{
+			desc:     "case-01: Check empty string",
+			input:    "",
+			expected: nil,
+		},
+		// {
+		// 	desc:     "case-02: Check apostrophe in word",
+		// 	input:    "О'Коннор",
+		// 	expected: []string{"о'Коннор"},
+		// },
+		{
+			desc:     "case-02: Check one word",
+			input:    "Hello",
+			expected: []string{"hello"},
+		},
+		{
+			desc:     "case-03: Check identical word weights with special characters",
+			input:    "ttt 'bbb' ttt bbb ooo, ooo. aaa eee: aaa - eee",
+			expected: []string{"aaa", "bbb", "eee", "ooo", "ttt"},
+		},
+	}
+
+	for _, tc := range tests {
+		tc := tc
+		t.Run(tc.desc, func(t *testing.T) {
+			require.Equal(t, tc.expected, Top10(tc.input))
+		})
+	}
+}
