@@ -7,14 +7,14 @@ import (
 	"strings"
 )
 
-var /* const */ splitter = regexp.MustCompile(`\s+(-\s+)*`)
+var splitter = regexp.MustCompile(`\s+(-\s+)*`) // const
 
-//Regex to remove all special characters from text and avoid apostrophe problems
-// var /* const */ replacer = regexp.MustCompile(`(?<![A-Za-z])[']|['](?![A-Za-z])|[,.!:"]`)
-var /* const */ replacer = strings.NewReplacer(",", "", ".", "", "!", "", ":", "", "'", "", "\"", "")
+// Regex to remove all special characters from text and avoid apostrophe problems
+// var replacer = regexp.MustCompile(`(?<![A-Za-z])[']|['](?![A-Za-z])|[,.!:"]`) // const.
+var replacer = strings.NewReplacer(",", "", ".", "", "!", "", ":", "", "'", "", "\"", "") // const
 
 func Top10(input string) []string {
-	//Return nil if string is empty
+	// Return nil if string is empty
 	if input == "" {
 		return nil
 	}
@@ -45,8 +45,7 @@ func Top10(input string) []string {
 	// return only first 10 words
 	if len(buffer) > 10 {
 		return buffer[0:10]
-	} else {
-		return buffer
 	}
 
+	return buffer
 }
