@@ -89,11 +89,22 @@ func TestCache(t *testing.T) {
 		require.False(t, ok)
 		require.Nil(t, val)
 	})
+
+	t.Run("clear cache", func(t *testing.T) {
+		lru := NewCache(3)
+		lru.Set("a", 1) // [a:1]
+		lru.Set("b", 2) // [b:2, a:1]
+		lru.Set("c", 4) // [c:4, b:3, a:1]
+		lru.Clear()
+		for _, v := range [...]Key{"a", "b", "c"} {
+			val, ok := lru.Get(v)
+			require.False(t, ok)
+			require.Nil(t, val)
+		}
+	})
 }
 
 func TestCacheMultithreading(t *testing.T) {
-	t.Skip() // Remove me if task with asterisk completed.
-
 	c := NewCache(10)
 	wg := &sync.WaitGroup{}
 	wg.Add(2)
@@ -113,4 +124,5 @@ func TestCacheMultithreading(t *testing.T) {
 	}()
 
 	wg.Wait()
+	c.Clear()
 }
