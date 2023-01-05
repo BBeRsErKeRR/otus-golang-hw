@@ -2,7 +2,7 @@ package hw04lrucache
 
 import "sync"
 
-var syncMutex = sync.RWMutex{}
+var syncMutex = sync.Mutex{}
 
 type Key string
 
@@ -29,9 +29,9 @@ func (lru *lruCache) Set(key Key, value interface{}) bool {
 	listValue.key = key
 	listValue.value = value
 
-	syncMutex.RLock()
+	syncMutex.Lock()
 	item, ok := lru.items[key]
-	syncMutex.RUnlock()
+	syncMutex.Unlock()
 
 	if ok {
 		item.Value = listValue
@@ -52,9 +52,9 @@ func (lru *lruCache) Set(key Key, value interface{}) bool {
 }
 
 func (lru *lruCache) Get(key Key) (interface{}, bool) {
-	syncMutex.RLock()
+	syncMutex.Lock()
 	item, ok := lru.items[key]
-	syncMutex.RUnlock()
+	syncMutex.Unlock()
 	if ok {
 		lru.queue.MoveToFront(item)
 		return item.Value.(ListValue).value, true
