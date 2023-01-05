@@ -66,7 +66,7 @@ func (lru *lruCache) Clear() {
 	syncMutex.Lock()
 	lru.items = make(map[Key]*ListItem)
 	syncMutex.Unlock()
-	lru.queue.Clear()
+	lru.queue = NewList()
 }
 
 func NewCache(capacity int) Cache {
