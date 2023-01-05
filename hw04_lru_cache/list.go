@@ -8,6 +8,7 @@ type List interface {
 	PushBack(v interface{}) *ListItem
 	Remove(i *ListItem)
 	MoveToFront(i *ListItem)
+	Clear()
 }
 
 type ListItem struct {
@@ -109,6 +110,12 @@ func (l *list) MoveToFront(i *ListItem) {
 	l.Remove(i)
 	l.insertFront(i)
 	l.len++
+}
+
+func (l *list) Clear() {
+	l.len = 0
+	l.first = nil
+	l.last = nil
 }
 
 func NewList() List {

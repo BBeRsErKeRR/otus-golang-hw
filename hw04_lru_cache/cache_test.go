@@ -50,7 +50,44 @@ func TestCache(t *testing.T) {
 	})
 
 	t.Run("purge logic", func(t *testing.T) {
-		// Write me
+		lru := NewCache(2)
+		lru.Set("a", 1)
+		lru.Set("b", 2)
+		lru.Set("c", 3)
+
+		val, ok := lru.Get("a")
+		require.False(t, ok)
+		require.Nil(t, val)
+	})
+
+	t.Run("purge old by set", func(t *testing.T) {
+		lru := NewCache(3)
+		lru.Set("a", 1)  // [a:1]
+		lru.Set("b", 2)  // [a:1, b:2]
+		lru.Set("a", 3)  // [b:3, a:1]
+		lru.Set("c", 4)  // [c:4, b:3, a:1]
+		lru.Set("a", 5)  // [a:5, c:4, b:3]
+		lru.Set("d", 10) // [d:10, a:5, c:4]
+
+		val, ok := lru.Get("b")
+		require.False(t, ok)
+		require.Nil(t, val)
+	})
+
+	t.Run("purge old by get", func(t *testing.T) {
+		lru := NewCache(3)
+		lru.Set("a", 1) // [a:1]
+		lru.Set("b", 2) // [b:2, a:1]
+		lru.Set("c", 4) // [c:4, b:3, a:1]
+		lru.Get("a")    // [a:1, c:4, b:3]
+		lru.Get("c")    // [c:4, a:1, b:3]
+		lru.Get("b")    // [b:3, c:4, a:1]
+		lru.Get("a")    // [a:1, b:3, c:4]
+		lru.Set("d", 0) // [d:0, a:1, b:3]
+
+		val, ok := lru.Get("c")
+		require.False(t, ok)
+		require.Nil(t, val)
 	})
 }
 

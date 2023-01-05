@@ -63,4 +63,15 @@ func TestList(t *testing.T) {
 		require.Nil(t, l.Front())
 		require.Nil(t, l.Back())
 	})
+
+	t.Run("clear", func(t *testing.T) {
+		l := NewList()
+		l.PushFront(10) // [10]
+		l.PushBack(20)  // [10, 20]
+
+		l.Clear()
+		require.Equal(t, 0, l.Len())
+		require.Nil(t, l.Front())
+		require.Nil(t, l.Back())
+	})
 }
