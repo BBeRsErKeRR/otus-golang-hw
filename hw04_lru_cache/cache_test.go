@@ -64,30 +64,42 @@ func TestCache(t *testing.T) {
 		lru := NewCache(3)
 		lru.Set("a", 1)  // [a:1]
 		lru.Set("b", 2)  // [a:1, b:2]
-		lru.Set("a", 3)  // [b:3, a:1]
-		lru.Set("c", 4)  // [c:4, b:3, a:1]
-		lru.Set("a", 5)  // [a:5, c:4, b:3]
+		lru.Set("a", 3)  // [b:2, a:3]
+		lru.Set("c", 4)  // [c:4, b:2, a:3]
+		lru.Set("a", 5)  // [a:5, c:4, b:2]
 		lru.Set("d", 10) // [d:10, a:5, c:4]
 
 		val, ok := lru.Get("b")
 		require.False(t, ok)
 		require.Nil(t, val)
+
+		for k, v := range map[Key]int{"d": 10, "a": 5, "c": 4} {
+			res, ok := lru.Get(k)
+			require.True(t, ok)
+			require.Equal(t, v, res)
+		}
 	})
 
 	t.Run("purge old by get", func(t *testing.T) {
 		lru := NewCache(3)
 		lru.Set("a", 1) // [a:1]
 		lru.Set("b", 2) // [b:2, a:1]
-		lru.Set("c", 4) // [c:4, b:3, a:1]
-		lru.Get("a")    // [a:1, c:4, b:3]
-		lru.Get("c")    // [c:4, a:1, b:3]
-		lru.Get("b")    // [b:3, c:4, a:1]
-		lru.Get("a")    // [a:1, b:3, c:4]
-		lru.Set("d", 0) // [d:0, a:1, b:3]
+		lru.Set("c", 4) // [c:4, b:2, a:1]
+		lru.Get("a")    // [a:1, c:4, b:2]
+		lru.Get("c")    // [c:4, a:1, b:2]
+		lru.Get("b")    // [b:2, c:4, a:1]
+		lru.Get("a")    // [a:1, b:2, c:4]
+		lru.Set("d", 0) // [d:0, a:1, b:2]
 
 		val, ok := lru.Get("c")
 		require.False(t, ok)
 		require.Nil(t, val)
+
+		for k, v := range map[Key]int{"d": 0, "a": 1, "b": 2} {
+			res, ok := lru.Get(k)
+			require.True(t, ok)
+			require.Equal(t, v, res)
+		}
 	})
 
 	t.Run("clear cache", func(t *testing.T) {
@@ -124,5 +136,69 @@ func TestCacheMultithreading(t *testing.T) {
 	}()
 
 	wg.Wait()
+	c.Clear()
+}
+
+func TestGetSetCacheMultithreading(t *testing.T) {
+	c := NewCache(3)
+	wg := &sync.WaitGroup{}
+	wg.Add(2)
+	data := [...]Key{"a", "b", "c"}
+
+	go func() {
+		defer wg.Done()
+		for i, v := range data {
+			c.Set(v, i)
+		}
+	}()
+
+	go func() {
+		defer wg.Done()
+		for _, v := range data {
+			c.Get(v)
+		}
+	}()
+
+	wg.Wait()
+	for i, v := range data {
+		val, ok := c.Get(v)
+		require.True(t, ok)
+		require.Equal(t, i, val)
+	}
+	c.Clear()
+}
+
+func TestSetCacheMultithreading(t *testing.T) {
+	c := NewCache(3)
+	wg := &sync.WaitGroup{}
+	wg.Add(3)
+	data := [...]Key{"a", "b", "c"}
+
+	go func() {
+		defer wg.Done()
+		for i, v := range data {
+			c.Set(v, i*3)
+		}
+	}()
+
+	go func() {
+		defer wg.Done()
+		for i, v := range data {
+			c.Set(v, i)
+		}
+	}()
+
+	go func() {
+		defer wg.Done()
+		for i, v := range data {
+			c.Set(v, i*2)
+		}
+	}()
+
+	wg.Wait()
+	for _, v := range data {
+		_, ok := c.Get(v)
+		require.True(t, ok)
+	}
 	c.Clear()
 }

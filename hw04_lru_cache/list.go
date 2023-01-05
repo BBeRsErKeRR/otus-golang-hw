@@ -92,7 +92,7 @@ func (l *list) PushBack(v interface{}) *ListItem {
 	return &node
 }
 
-func (l *list) Remove(i *ListItem) {
+func (l *list) remove(i *ListItem) {
 	if i.Prev == nil {
 		l.first = i.Next
 	} else {
@@ -103,13 +103,16 @@ func (l *list) Remove(i *ListItem) {
 	} else {
 		i.Next.Prev = i.Prev
 	}
+}
+
+func (l *list) Remove(i *ListItem) {
+	l.remove(i)
 	l.len--
 }
 
 func (l *list) MoveToFront(i *ListItem) {
-	l.Remove(i)
+	l.remove(i)
 	l.insertFront(i)
-	l.len++
 }
 
 func (l *list) Clear() {
