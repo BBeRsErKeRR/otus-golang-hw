@@ -2,12 +2,18 @@ package hw04lrucache
 
 import (
 	"math/rand"
+	"reflect"
 	"strconv"
 	"sync"
 	"testing"
+	"unsafe"
 
 	"github.com/stretchr/testify/require"
 )
+
+func GetUnexportedField(field reflect.Value) interface{} {
+	return reflect.NewAt(field.Type(), unsafe.Pointer(field.UnsafeAddr())).Elem().Interface()
+}
 
 func TestCache(t *testing.T) {
 	t.Run("empty cache", func(t *testing.T) {
@@ -78,6 +84,9 @@ func TestCache(t *testing.T) {
 			require.True(t, ok)
 			require.Equal(t, v, res)
 		}
+
+		itemKeys := reflect.ValueOf(lru).Elem().FieldByName("items").MapKeys()
+		require.True(t, len(itemKeys) == 3)
 	})
 
 	t.Run("purge old by get", func(t *testing.T) {
@@ -100,6 +109,9 @@ func TestCache(t *testing.T) {
 			require.True(t, ok)
 			require.Equal(t, v, res)
 		}
+
+		itemKeys := reflect.ValueOf(lru).Elem().FieldByName("items").MapKeys()
+		require.True(t, len(itemKeys) == 3)
 	})
 
 	t.Run("clear cache", func(t *testing.T) {
@@ -113,6 +125,14 @@ func TestCache(t *testing.T) {
 			require.False(t, ok)
 			require.Nil(t, val)
 		}
+		// Check cache map is empty
+		itemKeys := reflect.ValueOf(lru).Elem().FieldByName("items").MapKeys()
+		require.True(t, len(itemKeys) == 0)
+		// Check queue is empty
+		queue := GetUnexportedField(reflect.ValueOf(lru).Elem().FieldByName("queue")).(List)
+		require.Nil(t, queue.Back())
+		require.Nil(t, queue.Front())
+		require.True(t, queue.Len() == 0)
 	})
 }
 
