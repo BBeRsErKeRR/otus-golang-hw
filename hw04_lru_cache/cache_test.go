@@ -2,12 +2,18 @@ package hw04lrucache
 
 import (
 	"math/rand"
+	"reflect"
 	"strconv"
 	"sync"
 	"testing"
+	"unsafe"
 
 	"github.com/stretchr/testify/require"
 )
+
+func GetUnexportedField(field reflect.Value) interface{} {
+	return reflect.NewAt(field.Type(), unsafe.Pointer(field.UnsafeAddr())).Elem().Interface()
+}
 
 func TestCache(t *testing.T) {
 	t.Run("empty cache", func(t *testing.T) {
@@ -50,13 +56,87 @@ func TestCache(t *testing.T) {
 	})
 
 	t.Run("purge logic", func(t *testing.T) {
-		// Write me
+		lru := NewCache(2)
+		lru.Set("a", 1)
+		lru.Set("b", 2)
+		lru.Set("c", 3)
+
+		val, ok := lru.Get("a")
+		require.False(t, ok)
+		require.Nil(t, val)
+	})
+
+	t.Run("purge old by set", func(t *testing.T) {
+		lru := NewCache(3)
+		lru.Set("a", 1)  // [a:1]
+		lru.Set("b", 2)  // [a:1, b:2]
+		lru.Set("a", 3)  // [b:2, a:3]
+		lru.Set("c", 4)  // [c:4, b:2, a:3]
+		lru.Set("a", 5)  // [a:5, c:4, b:2]
+		lru.Set("d", 10) // [d:10, a:5, c:4]
+
+		val, ok := lru.Get("b")
+		require.False(t, ok)
+		require.Nil(t, val)
+
+		for k, v := range map[Key]int{"d": 10, "a": 5, "c": 4} {
+			res, ok := lru.Get(k)
+			require.True(t, ok)
+			require.Equal(t, v, res)
+		}
+
+		itemKeys := reflect.ValueOf(lru).Elem().FieldByName("items").MapKeys()
+		require.True(t, len(itemKeys) == 3)
+	})
+
+	t.Run("purge old by get", func(t *testing.T) {
+		lru := NewCache(3)
+		lru.Set("a", 1) // [a:1]
+		lru.Set("b", 2) // [b:2, a:1]
+		lru.Set("c", 4) // [c:4, b:2, a:1]
+		lru.Get("a")    // [a:1, c:4, b:2]
+		lru.Get("c")    // [c:4, a:1, b:2]
+		lru.Get("b")    // [b:2, c:4, a:1]
+		lru.Get("a")    // [a:1, b:2, c:4]
+		lru.Set("d", 0) // [d:0, a:1, b:2]
+
+		val, ok := lru.Get("c")
+		require.False(t, ok)
+		require.Nil(t, val)
+
+		for k, v := range map[Key]int{"d": 0, "a": 1, "b": 2} {
+			res, ok := lru.Get(k)
+			require.True(t, ok)
+			require.Equal(t, v, res)
+		}
+
+		itemKeys := reflect.ValueOf(lru).Elem().FieldByName("items").MapKeys()
+		require.True(t, len(itemKeys) == 3)
+	})
+
+	t.Run("clear cache", func(t *testing.T) {
+		lru := NewCache(3)
+		lru.Set("a", 1) // [a:1]
+		lru.Set("b", 2) // [b:2, a:1]
+		lru.Set("c", 4) // [c:4, b:3, a:1]
+		lru.Clear()
+		for _, v := range [...]Key{"a", "b", "c"} {
+			val, ok := lru.Get(v)
+			require.False(t, ok)
+			require.Nil(t, val)
+		}
+		// Check cache map is empty
+		itemKeys := reflect.ValueOf(lru).Elem().FieldByName("items").MapKeys()
+		require.True(t, len(itemKeys) == 0)
+		// Check queue is empty
+		queue := GetUnexportedField(reflect.ValueOf(lru).Elem().FieldByName("queue")).(List)
+		require.Nil(t, queue.Back())
+		require.Nil(t, queue.Front())
+		require.True(t, queue.Len() == 0)
 	})
 }
 
 func TestCacheMultithreading(t *testing.T) {
-	t.Skip() // Remove me if task with asterisk completed.
-
 	c := NewCache(10)
 	wg := &sync.WaitGroup{}
 	wg.Add(2)
@@ -76,4 +156,69 @@ func TestCacheMultithreading(t *testing.T) {
 	}()
 
 	wg.Wait()
+	c.Clear()
+}
+
+func TestGetSetCacheMultithreading(t *testing.T) {
+	c := NewCache(3)
+	wg := &sync.WaitGroup{}
+	wg.Add(2)
+	data := [...]Key{"a", "b", "c"}
+
+	go func() {
+		defer wg.Done()
+		for i, v := range data {
+			c.Set(v, i)
+		}
+	}()
+
+	go func() {
+		defer wg.Done()
+		for _, v := range data {
+			c.Get(v)
+		}
+	}()
+
+	wg.Wait()
+	for i, v := range data {
+		val, ok := c.Get(v)
+		require.True(t, ok)
+		require.Equal(t, i, val)
+	}
+	c.Clear()
+}
+
+func TestSetCacheMultithreading(t *testing.T) {
+	c := NewCache(3)
+	wg := &sync.WaitGroup{}
+	wg.Add(3)
+	data := [...]Key{"a", "b", "c"}
+
+	go func() {
+		defer wg.Done()
+		for i, v := range data {
+			c.Set(v, i*3)
+		}
+	}()
+
+	go func() {
+		defer wg.Done()
+		for i, v := range data {
+			c.Set(v, i)
+		}
+	}()
+
+	go func() {
+		defer wg.Done()
+		for i, v := range data {
+			c.Set(v, i*2)
+		}
+	}()
+
+	wg.Wait()
+	for _, v := range data {
+		_, ok := c.Get(v)
+		require.True(t, ok)
+	}
+	c.Clear()
 }
