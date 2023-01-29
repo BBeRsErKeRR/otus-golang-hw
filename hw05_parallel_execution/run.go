@@ -12,60 +12,41 @@ type Task func() error
 
 // Run starts tasks in n goroutines and stops its work when receiving m errors from tasks.
 func Run(tasks []Task, n, m int) error {
-	var errorsC int32
-	if int(errorsC) > m {
+	if m < 0 {
 		return ErrErrorsLimitExceeded
 	}
-
+	var errorsC int32
 	wg := sync.WaitGroup{}
 	ch := make(chan Task, n)
 	wg.Add(n + 1)
 
 	// Producer
-	go func(errorsCountAddr *int32) {
+	go func() {
 		defer wg.Done()
-		tasksLen := len(tasks)
-		sendTasksCount := 0
-		for {
+		defer close(ch)
+		for _, task := range tasks {
 			// close chan if found errors
-			testE := int(atomic.LoadInt32(errorsCountAddr)) >= m
-			if testE {
-				close(ch)
+			if int(atomic.LoadInt32(&errorsC)) >= m {
 				break
 			}
-
-			// Add new items into chan
-			test := sendTasksCount < tasksLen
-			if test {
-				ch <- tasks[sendTasksCount]
-				sendTasksCount++
-			} else {
-				close(ch)
-				break
-			}
+			ch <- task
 		}
-	}(&errorsC)
+	}()
 
 	// Consumer's
 	for i := 0; i < n; i++ {
-		go func(errorsCountAddr *int32) {
+		go func() {
 			defer wg.Done()
-			for {
-				test := int(atomic.LoadInt32(errorsCountAddr)) <= m
-				if test {
-					f, ok := <-ch
-					if !ok {
-						break
-					}
-					err := f()
-					if err != nil {
-						atomic.AddInt32(errorsCountAddr, 1)
-					}
-				} else {
+			for f := range ch {
+				if int(atomic.LoadInt32(&errorsC)) > m {
 					break
 				}
+				err := f()
+				if err != nil {
+					atomic.AddInt32(&errorsC, 1)
+				}
 			}
-		}(&errorsC)
+		}()
 	}
 
 	wg.Wait()
