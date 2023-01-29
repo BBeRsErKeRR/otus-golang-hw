@@ -13,7 +13,6 @@ type Task func() error
 // Run starts tasks in n goroutines and stops its work when receiving m errors from tasks.
 func Run(tasks []Task, n, m int) error {
 	var errorsC int32
-	var lenT int32
 	if int(errorsC) > m {
 		return ErrErrorsLimitExceeded
 	}
@@ -23,9 +22,10 @@ func Run(tasks []Task, n, m int) error {
 	wg.Add(n + 1)
 
 	// Producer
-	go func(sendTasksCountAddr *int32, errorsCountAddr *int32) {
+	go func(errorsCountAddr *int32) {
 		defer wg.Done()
 		tasksLen := len(tasks)
+		sendTasksCount := 0
 		for {
 			// close chan if found errors
 			testE := int(atomic.LoadInt32(errorsCountAddr)) >= m
@@ -35,17 +35,16 @@ func Run(tasks []Task, n, m int) error {
 			}
 
 			// Add new items into chan
-			sendTasksCount := int(atomic.LoadInt32(sendTasksCountAddr))
 			test := sendTasksCount < tasksLen
 			if test {
 				ch <- tasks[sendTasksCount]
-				atomic.AddInt32(sendTasksCountAddr, 1)
+				sendTasksCount++
 			} else {
 				close(ch)
 				break
 			}
 		}
-	}(&lenT, &errorsC)
+	}(&errorsC)
 
 	// Consumer's
 	for i := 0; i < n; i++ {
