@@ -9,31 +9,32 @@ type (
 type Stage func(in In) (out Out)
 
 func ExecutePipeline(in In, done In, stages ...Stage) Out {
-	// Resolve stage worker
-	worker := func(stage Stage, input In, done In) Out {
+	worker := func(done In, stage Stage, inputC In) Out {
 		out := make(Bi)
 		go func() {
 			defer close(out)
-			for r := range stage(input) {
+			for r := range stage(inputC) {
 				select {
 				case <-done:
 					return
-				default:
-					out <- r
+				case out <- r:
 				}
 			}
 		}()
 		return out
 	}
-	// Buffer to reduce stages results into one value
-	// TODO: create reducer function
-	buffer := make(map[int](Out))
-	for i, stage := range stages {
-		if i == 0 {
-			buffer[i] = worker(stage, in, done)
-		} else {
-			buffer[i] = worker(stage, buffer[i-1], done)
+
+	reduce := func(done In, s []Stage, f func(done In, stage Stage, inputC In) Out, init In) Out {
+		acc := init
+		for _, v := range s {
+			select {
+			case <-done:
+			default:
+				acc = f(done, v, acc)
+			}
 		}
+		return acc
 	}
-	return buffer[len(stages)-1]
+
+	return reduce(done, stages, worker, in)
 }
