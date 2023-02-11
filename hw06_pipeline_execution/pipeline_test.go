@@ -5,6 +5,7 @@ import (
 	"testing"
 	"time"
 
+	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
 
@@ -89,5 +90,55 @@ func TestPipeline(t *testing.T) {
 
 		require.Len(t, result, 0)
 		require.Less(t, int64(elapsed), int64(abortDur)+int64(fault))
+	})
+
+	t.Run("empty stages case", func(t *testing.T) {
+		in := make(Bi)
+		data := []int{1, 2, 3, 4, 5}
+
+		go func() {
+			for _, v := range data {
+				in <- v
+			}
+			close(in)
+		}()
+
+		result := make([]int, 0, 5)
+
+		for s := range ExecutePipeline(in, nil) {
+			result = append(result, s.(int))
+		}
+
+		require.Equal(t, data, result)
+	})
+
+	t.Run("empty input case", func(t *testing.T) {
+		assert.Empty(t, ExecutePipeline(nil, nil, stages...))
+	})
+
+	t.Run("empty stages & input case", func(t *testing.T) {
+		require.Nil(t, ExecutePipeline(nil, nil))
+	})
+
+	t.Run("1 stages & input case", func(t *testing.T) {
+		in := make(Bi)
+
+		go func() {
+			in <- 1
+			close(in)
+		}()
+
+		stages := []Stage{
+			g("Stringifier", func(v interface{}) interface{} { return strconv.Itoa(v.(int)) }),
+		}
+
+		result := make([]string, 0, 1)
+		pipeline := ExecutePipeline(in, nil, stages...)
+
+		for s := range pipeline {
+			result = append(result, s.(string))
+		}
+
+		require.Equal(t, []string{"1"}, result)
 	})
 }
