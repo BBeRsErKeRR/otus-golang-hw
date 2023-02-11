@@ -13,7 +13,6 @@ type (
 type Stage func(in In) (out Out)
 
 func ExecutePipeline(in In, done In, stages ...Stage) Out {
-
 	worker := func(done In, stageReader In) Out {
 		// limiter to send data to receive done signal
 		limiter := time.NewTicker(5 * time.Millisecond)
@@ -36,9 +35,7 @@ func ExecutePipeline(in In, done In, stages ...Stage) Out {
 					case <-done:
 						return
 					case out <- stOut:
-
 					}
-
 				}
 			}
 		}()
@@ -49,7 +46,6 @@ func ExecutePipeline(in In, done In, stages ...Stage) Out {
 	reduce := func(done In, s []Stage, f func(done In, stageReader In) Out, init In) Out {
 		acc := init
 		for _, v := range s {
-
 			acc = f(done, v(acc))
 		}
 		return acc
