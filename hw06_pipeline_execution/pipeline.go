@@ -1,5 +1,9 @@
 package hw06pipelineexecution
 
+import (
+	"time"
+)
+
 type (
 	In  = <-chan interface{}
 	Out = In
@@ -9,29 +13,44 @@ type (
 type Stage func(in In) (out Out)
 
 func ExecutePipeline(in In, done In, stages ...Stage) Out {
-	worker := func(done In, stage Stage, inputC In) Out {
+
+	worker := func(done In, stageReader In) Out {
+		// limiter to send data to receive done signal
+		limiter := time.NewTicker(5 * time.Millisecond)
+		// result chan
 		out := make(Bi)
 		go func() {
 			defer close(out)
-			for r := range stage(inputC) {
+			for {
+				// check done signal before read stage out
 				select {
 				case <-done:
 					return
-				case out <- r:
+				case stOut, ok := <-stageReader:
+					if !ok {
+						return
+					}
+					// wait tick and check done signal
+					<-limiter.C
+					select {
+					case <-done:
+						return
+					case out <- stOut:
+
+					}
+
 				}
 			}
 		}()
 		return out
 	}
 
-	reduce := func(done In, s []Stage, f func(done In, stage Stage, inputC In) Out, init In) Out {
+	// concatenate all results
+	reduce := func(done In, s []Stage, f func(done In, stageReader In) Out, init In) Out {
 		acc := init
 		for _, v := range s {
-			select {
-			case <-done:
-			default:
-				acc = f(done, v, acc)
-			}
+
+			acc = f(done, v(acc))
 		}
 		return acc
 	}
