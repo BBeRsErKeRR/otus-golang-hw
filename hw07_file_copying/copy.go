@@ -23,8 +23,12 @@ func Copy(fromPath, toPath string, offset, limit int64) error {
 	if err != nil {
 		return err
 	}
+	size := stat.Size()
 
-	if offset > stat.Size() {
+	if size == 0 {
+		return ErrUnsupportedFile
+	}
+	if offset > size {
 		return ErrOffsetExceedsFileSize
 	}
 
@@ -33,7 +37,7 @@ func Copy(fromPath, toPath string, offset, limit int64) error {
 		return err
 	}
 
-	totalSize := stat.Size() - offset
+	totalSize := size - offset
 
 	destination, err := os.Create(toPath)
 	if err != nil {
@@ -47,14 +51,22 @@ func Copy(fromPath, toPath string, offset, limit int64) error {
 	pb.Start()
 	defer pb.Finish()
 
-	for {
-		n, err := io.CopyN(destination, input, limit)
-		if err != nil {
+	if limit == 0 {
+		n, err := io.Copy(destination, input)
+		if err != nil && !errors.Is(err, io.EOF) {
 			return err
 		}
 		pb.Add64(n)
-		if n == 0 {
-			break
+	} else {
+		for {
+			n, err := io.CopyN(destination, input, limit)
+			if err != nil && !errors.Is(err, io.EOF) {
+				return err
+			}
+			pb.Add64(n)
+			if n == 0 {
+				break
+			}
 		}
 	}
 	return nil

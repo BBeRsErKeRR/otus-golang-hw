@@ -129,6 +129,7 @@ func (pb *Progress) Start() {
 func (pb *Progress) Finish() {
 	close(pb.finish)
 	pb.Update()
+	fmt.Println("")
 }
 
 func (pb *Progress) Update() {
