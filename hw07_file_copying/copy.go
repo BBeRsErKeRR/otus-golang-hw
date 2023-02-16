@@ -38,7 +38,6 @@ func Copy(fromPath, toPath string, offset, limit int64) error {
 	}
 
 	totalSize := size - offset
-
 	destination, err := os.Create(toPath)
 	if err != nil {
 		return err
@@ -64,7 +63,7 @@ func Copy(fromPath, toPath string, offset, limit int64) error {
 				return err
 			}
 			pb.Add64(n)
-			if n == 0 {
+			if pb.Get() >= limit || n == 0 {
 				break
 			}
 		}

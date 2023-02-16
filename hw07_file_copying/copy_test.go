@@ -60,9 +60,16 @@ func TestCopy(t *testing.T) {
 		{
 			name:   "with offset and limit",
 			input:  "testdata/input.txt",
-			output: "empty_offset_and_limit.txt",
+			output: "with_offset_and_limit.txt",
 			offset: 10,
 			limit:  100,
+		},
+		{
+			name:   "large offset",
+			input:  "testdata/out_offset6000_limit1000.txt",
+			output: "large_offset.txt",
+			offset: 500,
+			limit:  1000,
 		},
 	}
 
@@ -80,7 +87,17 @@ func TestCopy(t *testing.T) {
 			require.Nil(t, err, "Should not be errors")
 			resStat, err := f.Stat()
 			check(err)
-			require.Equal(t, s-tc.offset, resStat.Size(), "Result file not equal current")
+			var expected int64
+			switch l := tc.limit; {
+			case l == 0:
+				expected = s - tc.offset
+			case s-tc.offset > l:
+				expected = tc.limit
+			default:
+				expected = s - tc.offset
+			}
+
+			require.Equal(t, expected, resStat.Size(), "Result file not equal current")
 		})
 	}
 }
