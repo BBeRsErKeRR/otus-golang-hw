@@ -90,7 +90,9 @@ func TestCopy(t *testing.T) {
 			require.Equal(t, expected, resStat.Size(), "Result file not equal current")
 		})
 	}
+}
 
+func TestNegativeCaseCopy(t *testing.T) {
 	negativeTests := []struct {
 		name       string
 		input      string
@@ -100,6 +102,51 @@ func TestCopy(t *testing.T) {
 		e          error
 		skipCreate bool
 	}{
+		{
+			name:       "equal relative to",
+			input:      "testdata/input.txt",
+			output:     "testdata/../testdata/input.txt",
+			offset:     0,
+			limit:      0,
+			e:          ErrorEqualFile,
+			skipCreate: true,
+		},
+		{
+			name:       "equal relative from",
+			input:      "testdata/../testdata/input.txt",
+			output:     "testdata/input.txt",
+			offset:     0,
+			limit:      0,
+			e:          ErrorEqualFile,
+			skipCreate: true,
+		},
+		{
+			name:       "equal symlink to",
+			input:      "testdata/input.txt",
+			output:     "testdata/symlink",
+			offset:     0,
+			limit:      0,
+			e:          ErrorEqualFile,
+			skipCreate: true,
+		},
+		{
+			name:       "equal symlink from",
+			input:      "testdata/symlink",
+			output:     "testdata/input.txt",
+			offset:     0,
+			limit:      0,
+			e:          ErrorEqualFile,
+			skipCreate: true,
+		},
+		{
+			name:       "unsupported file",
+			input:      "/dev/urandom",
+			output:     "/dev/null",
+			offset:     0,
+			limit:      1,
+			e:          ErrUnsupportedFile,
+			skipCreate: true,
+		},
 		{
 			name:       "unsupported file",
 			input:      "/dev/urandom",

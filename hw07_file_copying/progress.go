@@ -40,7 +40,6 @@ type Progress struct {
 	ProgressChar      rune
 	EmptyProgressChar rune
 	Color             string
-	// Width             int
 
 	prefix     string
 	postfix    string

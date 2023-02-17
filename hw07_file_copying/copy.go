@@ -5,6 +5,8 @@ import (
 	"fmt"
 	"io"
 	"os"
+	"path"
+	"path/filepath"
 	"time"
 )
 
@@ -15,10 +17,65 @@ var (
 	ErrorNegativeNumber      = errors.New("negative number")
 )
 
-func Copy(fromPath, toPath string, offset, limit int64) error {
+func resolveLink(link string) (string, error) {
+	resolvedPath, err := os.Readlink(link)
+	if err != nil {
+		return "", err
+	}
+	if !filepath.IsAbs(resolvedPath) {
+		resolvedPath = path.Join(path.Dir(link), resolvedPath)
+	}
+	return resolvedPath, nil
+}
+
+func checkFilePathEquals(from, to string) error {
+	// check string
+	if from == to {
+		return ErrorEqualFile
+	}
+	// check relative
+	fromPath, err := filepath.Abs(from)
+	if err != nil {
+		return err
+	}
+	toPath, err := filepath.Abs(to)
+	if err != nil {
+		return err
+	}
+	// check symbolic
+	fromStat, err := os.Lstat(from)
+	if err != nil {
+		return err
+	}
+	toStat, err := os.Lstat(to)
+	if err != nil {
+		return err
+	}
+
+	if fromStat.Mode()&os.ModeSymlink != 0 {
+		fromPath, err = resolveLink(fromPath)
+		if err != nil {
+			return err
+		}
+	}
+	if toStat.Mode()&os.ModeSymlink != 0 {
+		toPath, err = resolveLink(toPath)
+		if err != nil {
+			return err
+		}
+	}
 	if fromPath == toPath {
 		return ErrorEqualFile
 	}
+	return nil
+}
+
+func Copy(fromPath, toPath string, offset, limit int64) error {
+	err := checkFilePathEquals(fromPath, toPath)
+	if err != nil {
+		return err
+	}
+
 	if offset < 0 || limit < 0 {
 		return ErrorNegativeNumber
 	}
