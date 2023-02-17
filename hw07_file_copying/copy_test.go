@@ -7,12 +7,6 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
-func check(e error) {
-	if e != nil {
-		panic(e)
-	}
-}
-
 func size(path string) (int64, error) {
 	i, err := os.Open(path)
 	if err != nil {
@@ -26,11 +20,6 @@ func size(path string) (int64, error) {
 }
 
 func TestCopy(t *testing.T) {
-	t.Run("unsupported file", func(t *testing.T) {
-		err := Copy("/dev/urandom", "/dev/null", 0, 1)
-		require.ErrorIs(t, err, ErrUnsupportedFile, "Error should be: %v, got: %v", ErrUnsupportedFile, err)
-	})
-
 	t.Run("copy to /dev/null", func(t *testing.T) {
 		err := Copy("testdata/input.txt", "/dev/null", 0, 1)
 		require.Nil(t, err, "Should not be errors")
@@ -77,16 +66,17 @@ func TestCopy(t *testing.T) {
 		tc := tc
 		t.Run(tc.name, func(t *testing.T) {
 			f, err := os.CreateTemp("/tmp", tc.output)
-			check(err)
+			require.NoError(t, err)
 			defer os.Remove(f.Name())
 
 			s, err := size(tc.input)
-			check(err)
+			require.NoError(t, err)
 
 			err = Copy(tc.input, f.Name(), tc.offset, tc.limit)
-			require.Nil(t, err, "Should not be errors")
+			require.NoError(t, err)
+
 			resStat, err := f.Stat()
-			check(err)
+			require.NoError(t, err)
 			var expected int64
 			switch l := tc.limit; {
 			case l == 0:
@@ -98,6 +88,61 @@ func TestCopy(t *testing.T) {
 			}
 
 			require.Equal(t, expected, resStat.Size(), "Result file not equal current")
+		})
+	}
+
+	negativeTests := []struct {
+		name       string
+		input      string
+		output     string
+		offset     int64
+		limit      int64
+		e          error
+		skipCreate bool
+	}{
+		{
+			name:       "unsupported file",
+			input:      "/dev/urandom",
+			output:     "/dev/null",
+			offset:     0,
+			limit:      1,
+			e:          ErrUnsupportedFile,
+			skipCreate: true,
+		},
+		{
+			name:   "negative offset",
+			input:  "testdata/out_offset6000_limit1000.txt",
+			output: "large_offset.txt",
+			offset: -100,
+			limit:  1000,
+			e:      ErrorNegativeNumber,
+		},
+		{
+			name:   "negative limit",
+			input:  "testdata/out_offset6000_limit1000.txt",
+			output: "large_offset.txt",
+			offset: 0,
+			limit:  -100,
+			e:      ErrorNegativeNumber,
+		},
+	}
+
+	for _, tc := range negativeTests {
+		tc := tc
+		t.Run(tc.name, func(t *testing.T) {
+			var f *os.File
+			var err error
+			if tc.skipCreate {
+				f, err = os.Open(tc.output)
+				require.NoError(t, err)
+			} else {
+				f, err = os.CreateTemp("/tmp", tc.output)
+				require.NoError(t, err)
+			}
+			defer os.Remove(f.Name())
+
+			err = Copy(tc.input, f.Name(), tc.offset, tc.limit)
+			require.ErrorIs(t, err, tc.e, "Error should be: %v, got: %v", tc.e, err)
 		})
 	}
 }

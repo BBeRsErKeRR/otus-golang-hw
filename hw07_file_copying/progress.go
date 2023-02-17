@@ -2,6 +2,7 @@ package main
 
 import (
 	"fmt"
+	"io"
 	"strings"
 	"sync"
 	"sync/atomic"
@@ -100,7 +101,7 @@ func (pb *Progress) print(total, current int64) {
 	} else {
 		percent = float64(current) / float64(100)
 	}
-	percentBox = fmt.Sprintf("  (%.1f%%)", percent)
+	percentBox = fmt.Sprintf("  (%.3f%%)", percent)
 
 	progressLength := int(barLength * percent / 100)
 	emptyProgressLength := barLength - progressLength
@@ -154,4 +155,28 @@ func (pb *Progress) refresher() {
 			pb.Update()
 		}
 	}
+}
+
+func (pb *Progress) Write(p []byte) (n int) {
+	n = len(p)
+	pb.Add(n)
+	return
+}
+
+func (pb *Progress) Read(p []byte) (n int) {
+	n = len(p)
+	pb.Add(n)
+	return
+}
+
+func (pb *Progress) NewProxyReader(r io.Reader) *Reader {
+	return &Reader{r, pb, time.Microsecond * 0}
+}
+
+func (pb *Progress) NewProxyFreezeReader(r io.Reader, d time.Duration) *Reader {
+	return &Reader{r, pb, d}
+}
+
+func (pb *Progress) NewProxyWriter(r io.Writer) *Writer {
+	return &Writer{r, pb}
 }

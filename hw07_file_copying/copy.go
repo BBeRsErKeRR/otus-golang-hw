@@ -5,14 +5,23 @@ import (
 	"fmt"
 	"io"
 	"os"
+	"time"
 )
 
 var (
 	ErrUnsupportedFile       = errors.New("unsupported file")
 	ErrOffsetExceedsFileSize = errors.New("offset exceeds file size")
+	ErrorEqualFile           = errors.New("input and dst path is equal")
+	ErrorNegativeNumber      = errors.New("negative number")
 )
 
 func Copy(fromPath, toPath string, offset, limit int64) error {
+	if fromPath == toPath {
+		return ErrorEqualFile
+	}
+	if offset < 0 || limit < 0 {
+		return ErrorNegativeNumber
+	}
 	input, err := os.Open(fromPath)
 	if err != nil {
 		return err
@@ -32,7 +41,7 @@ func Copy(fromPath, toPath string, offset, limit int64) error {
 		return ErrOffsetExceedsFileSize
 	}
 
-	_, err = input.Seek(offset, 0)
+	_, err = input.Seek(offset, io.SeekStart)
 	if err != nil {
 		return err
 	}
@@ -45,28 +54,24 @@ func Copy(fromPath, toPath string, offset, limit int64) error {
 	defer destination.Close()
 
 	pb := CreateNew64(totalSize)
-	pb.Prefix(fmt.Sprintf("Copy file '%v' to '%v': ", fromPath, toPath))
-	pb.Postfix(fmt.Sprintf(" | limit: %v, offset: %v ", limit, offset))
+	fmt.Printf("Copy file '%v' to '%v': \n", fromPath, toPath)
+	fmt.Printf("  limit: %v\n  offset: %v \n", limit, offset)
 	pb.Start()
+	pb.Prefix("  progress:")
 	defer pb.Finish()
+	defer pb.Postfix("  SUCCESS")
 
-	if limit == 0 {
-		n, err := io.Copy(destination, input)
-		if err != nil && !errors.Is(err, io.EOF) {
-			return err
-		}
-		pb.Add64(n)
+	var reader io.Reader
+	if limit > 0 {
+		reader = io.LimitReader(input, limit)
 	} else {
-		for {
-			n, err := io.CopyN(destination, input, limit)
-			if err != nil && !errors.Is(err, io.EOF) {
-				return err
-			}
-			pb.Add64(n)
-			if pb.Get() >= limit || n == 0 {
-				break
-			}
-		}
+		reader = input
+	}
+
+	barReader := pb.NewProxyFreezeReader(reader, time.Millisecond*10)
+	_, err = io.Copy(destination, barReader)
+	if err != nil && !errors.Is(err, io.EOF) {
+		return err
 	}
 	return nil
 }
