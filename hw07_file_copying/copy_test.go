@@ -132,14 +132,15 @@ func TestCopy(t *testing.T) {
 		t.Run(tc.name, func(t *testing.T) {
 			var f *os.File
 			var err error
+
 			if tc.skipCreate {
 				f, err = os.Open(tc.output)
 				require.NoError(t, err)
 			} else {
 				f, err = os.CreateTemp("/tmp", tc.output)
 				require.NoError(t, err)
+				defer os.Remove(f.Name())
 			}
-			defer os.Remove(f.Name())
 
 			err = Copy(tc.input, f.Name(), tc.offset, tc.limit)
 			require.ErrorIs(t, err, tc.e, "Error should be: %v, got: %v", tc.e, err)

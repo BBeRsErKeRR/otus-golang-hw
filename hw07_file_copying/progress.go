@@ -53,10 +53,14 @@ type Progress struct {
 }
 
 func (pb *Progress) Postfix(postfix string) {
+	pb.mu.Lock()
+	defer pb.mu.Unlock()
 	pb.postfix = postfix
 }
 
 func (pb *Progress) Prefix(prefix string) {
+	pb.mu.Lock()
+	defer pb.mu.Unlock()
 	pb.prefix = prefix
 }
 

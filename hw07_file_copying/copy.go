@@ -56,8 +56,8 @@ func Copy(fromPath, toPath string, offset, limit int64) error {
 	pb := CreateNew64(totalSize)
 	fmt.Printf("Copy file '%v' to '%v': \n", fromPath, toPath)
 	fmt.Printf("  limit: %v\n  offset: %v \n", limit, offset)
-	pb.Start()
 	pb.Prefix("  progress:")
+	pb.Start()
 	defer pb.Finish()
 	defer pb.Postfix("  SUCCESS")
 
