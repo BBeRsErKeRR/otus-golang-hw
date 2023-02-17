@@ -49,6 +49,9 @@ func checkFilePathEquals(from, to string) error {
 	}
 	toStat, err := os.Lstat(to)
 	if err != nil {
+		if errors.Is(err, os.ErrNotExist) {
+			return nil
+		}
 		return err
 	}
 
