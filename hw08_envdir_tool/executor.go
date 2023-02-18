@@ -30,19 +30,18 @@ func filterEnvByKeys(env []string, envVars Environment) []string {
 		}
 	}
 	return append(res, additional...)
-
 }
 
 // RunCmd runs a command + arguments (cmd) with environment variables from env.
 func RunCmd(cmd []string, env Environment) (returnCode int) {
-	execCmd := exec.Command(cmd[0], cmd[1:]...)
+	execCmd := exec.Command(cmd[0], cmd[1:]...) //nolint:gosec
 	execCmd.Stdout = os.Stdout
 	execCmd.Stderr = os.Stderr
 	execCmd.Stdin = os.Stdin
 	execCmd.Env = filterEnvByKeys(os.Environ(), env)
 	err := execCmd.Run()
 	if err != nil {
-		if exitErr, ok := err.(*exec.ExitError); ok {
+		if exitErr, ok := err.(*exec.ExitError); ok { //nolint
 			return exitErr.ExitCode()
 		}
 		return defaultFailedCode

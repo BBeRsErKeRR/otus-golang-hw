@@ -42,7 +42,7 @@ func TestReadDir(t *testing.T) {
 			check, ok := res[c.name]
 			require.True(t, ok, "Could not get value %v from res", c.name)
 			require.Equal(t, check.Value, c.value, "For %v result should be : '%v', got '%v'", c.name, c.value, check.Value)
-			require.Equal(t, check.NeedRemove, c.needRemove, "For %v result should be : '%v', got '%v'", c.name, c.needRemove, check.NeedRemove)
+			require.Equal(t, check.NeedRemove, c.needRemove, "For %v result should be : '%v'", c.name, c.needRemove)
 		}
 	})
 }

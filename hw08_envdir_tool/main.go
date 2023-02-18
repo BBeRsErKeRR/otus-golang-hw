@@ -6,13 +6,11 @@ import (
 	"os"
 )
 
-var (
-	emptyArgs = errors.New("empty arguments")
-)
+var errEmptyArgs = errors.New("empty arguments")
 
 func main() {
 	if len(os.Args) < 3 {
-		fmt.Println(emptyArgs)
+		fmt.Println(errEmptyArgs)
 		os.Exit(1)
 	}
 	dirName := os.Args[1]
@@ -25,5 +23,4 @@ func main() {
 	}
 
 	os.Exit(RunCmd(cmdArgs, envVars))
-
 }
