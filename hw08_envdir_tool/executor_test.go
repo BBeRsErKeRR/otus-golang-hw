@@ -1,6 +1,7 @@
 package main
 
 import (
+	"os"
 	"testing"
 
 	"github.com/stretchr/testify/require"
@@ -50,4 +51,23 @@ func TestRunCmd(t *testing.T) {
 			require.Equal(t, exitCode, tc.exitCode)
 		})
 	}
+
+	t.Run("empty command", func(t *testing.T) {
+		args := []string{}
+		exitCode := RunCmd(args, envVars)
+		require.Equal(t, exitCode, 1)
+	})
+
+	t.Run("empty env", func(t *testing.T) {
+		args := []string{"bash", "testdata/check_env.sh", "HOME"}
+		env := make(map[string]EnvValue)
+		exitCode := RunCmd(args, env)
+		require.Equal(t, exitCode, 0)
+	})
+
+	t.Run("check filter env", func(t *testing.T) {
+		env := os.Environ()
+		filtered := filterEnvByKeys(env, envVars)
+		require.Equal(t, len(filtered), len(env))
+	})
 }
