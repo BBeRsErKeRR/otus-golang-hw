@@ -5,7 +5,7 @@ import (
 	"errors"
 	"io"
 	"os"
-	"path"
+	"path/filepath"
 	"strings"
 )
 
@@ -20,7 +20,7 @@ type EnvValue struct {
 func readEnvValue(dir, fileName string) (EnvValue, error) {
 	var envValue EnvValue
 
-	file, err := os.Open(path.Join(dir, fileName))
+	file, err := os.Open(filepath.Join(dir, fileName))
 	if err != nil {
 		return envValue, err
 	}
