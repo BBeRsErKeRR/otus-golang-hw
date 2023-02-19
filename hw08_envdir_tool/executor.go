@@ -39,12 +39,14 @@ func filterEnvByKeys(env []string, envVars Environment) []string {
 // RunCmd runs a command + arguments (cmd) with environment variables from env.
 func RunCmd(cmd []string, env Environment) (returnCode int) {
 	var execCmd *exec.Cmd
-	if len(cmd) == 0 {
+
+	switch length := len(cmd); length {
+	case 0:
 		fmt.Println("Not found execution command!")
 		return 1
-	} else if len(cmd) == 1 {
+	case 1:
 		execCmd = exec.Command(cmd[0]) //nolint:gosec
-	} else {
+	default:
 		execCmd = exec.Command(cmd[0], cmd[1:]...) //nolint:gosec
 	}
 
