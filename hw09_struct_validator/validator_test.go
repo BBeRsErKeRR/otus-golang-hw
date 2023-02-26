@@ -10,6 +10,8 @@ import (
 
 type UserRole string
 
+var i *int
+
 // Test the function on different structures and other types.
 type (
 	BadValidateInt struct {
@@ -92,7 +94,6 @@ func TestValidate(t *testing.T) {
 			err := Validate(tt.in)
 			require.Error(t, err)
 			require.NotErrorIs(t, err, ve)
-			_ = tt
 		})
 	}
 
@@ -190,6 +191,11 @@ func TestValidate(t *testing.T) {
 			in:          make(chan []int),
 			expectedErr: errorUnsupportedType,
 		},
+
+		{
+			in:          i,
+			expectedErr: errorUnsupportedType,
+		},
 	}
 
 	for i, tt := range tests {
@@ -202,7 +208,6 @@ func TestValidate(t *testing.T) {
 			} else {
 				require.NoError(t, err)
 			}
-			_ = tt
 		})
 	}
 }

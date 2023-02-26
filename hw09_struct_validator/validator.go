@@ -224,13 +224,11 @@ func (v *Validator) validateFromTag(name string, value interface{}, tag string) 
 }
 
 func (v *Validator) validateField(name string, value interface{}, tag reflect.StructTag) error {
-	if tag.Get("validate") != "" {
-		validate, ok := tag.Lookup("validate")
-		if ok {
-			err := v.validateFromTag(name, value, validate)
-			if err != nil {
-				return err
-			}
+	validate, ok := tag.Lookup("validate")
+	if ok {
+		err := v.validateFromTag(name, value, validate)
+		if err != nil {
+			return err
 		}
 	}
 	return nil
@@ -241,7 +239,7 @@ func (v *Validator) ValidateStruct(st interface{}) error {
 	for i := 0; i < el.NumField(); i++ {
 		fieldDetail := el.Type().Field(i)
 		valF := el.Field(i)
-		if valF.IsValid() && fieldDetail.IsExported() {
+		if fieldDetail.IsExported() {
 			fE := v.validateField(fieldDetail.Name, valF.Interface(), fieldDetail.Tag)
 			if fE != nil {
 				return fE
