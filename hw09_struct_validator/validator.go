@@ -71,6 +71,13 @@ func (v *Validator) getErrors() ValidationErrors {
 	return v.validationErrors
 }
 
+func (v *Validator) appendError(name string, e error) {
+	validationError := ValidationError{}
+	validationError.Field = name
+	validationError.Err = e
+	v.validationErrors = append(v.validationErrors, validationError)
+}
+
 func (v *Validator) validateString(name, value string, tag map[string]string) error {
 	count := tag["len"]
 	if count != "" {
@@ -79,10 +86,7 @@ func (v *Validator) validateString(name, value string, tag map[string]string) er
 			return err
 		}
 		if countInt < len(value) {
-			validationError := ValidationError{}
-			validationError.Field = name
-			validationError.Err = errorValidateStringLength
-			v.validationErrors = append(v.validationErrors, validationError)
+			v.appendError(name, errorValidateStringLength)
 		}
 	}
 
@@ -93,10 +97,7 @@ func (v *Validator) validateString(name, value string, tag map[string]string) er
 			return err
 		}
 		if !pattern.MatchString(value) {
-			validationError := ValidationError{}
-			validationError.Field = name
-			validationError.Err = errorValidateStringRegexp
-			v.validationErrors = append(v.validationErrors, validationError)
+			v.appendError(name, errorValidateStringRegexp)
 		}
 	}
 
@@ -104,20 +105,14 @@ func (v *Validator) validateString(name, value string, tag map[string]string) er
 	if variantsStr != "" {
 		variants := strings.Split(variantsStr, ",")
 		if !contains(variants, value) {
-			validationError := ValidationError{}
-			validationError.Field = name
-			validationError.Err = errorValidateIn
-			v.validationErrors = append(v.validationErrors, validationError)
+			v.appendError(name, errorValidateIn)
 		}
 	}
 
 	_, isNoSpaces := tag["nospaces"]
 	if isNoSpaces {
 		if strings.Contains(value, " ") {
-			validationError := ValidationError{}
-			validationError.Field = name
-			validationError.Err = errorValidateNoSpaces
-			v.validationErrors = append(v.validationErrors, validationError)
+			v.appendError(name, errorValidateNoSpaces)
 		}
 	}
 
@@ -132,10 +127,7 @@ func (v *Validator) validateInt64(name string, value int64, tag map[string]strin
 			return err
 		}
 		if int64(min) > value {
-			validationError := ValidationError{}
-			validationError.Field = name
-			validationError.Err = errorValidateMin
-			v.validationErrors = append(v.validationErrors, validationError)
+			v.appendError(name, errorValidateMin)
 		}
 	}
 
@@ -146,10 +138,7 @@ func (v *Validator) validateInt64(name string, value int64, tag map[string]strin
 			return err
 		}
 		if int64(max) < value {
-			validationError := ValidationError{}
-			validationError.Field = name
-			validationError.Err = errorValidateMax
-			v.validationErrors = append(v.validationErrors, validationError)
+			v.appendError(name, errorValidateMax)
 		}
 	}
 
@@ -165,30 +154,21 @@ func (v *Validator) validateInt64(name string, value int64, tag map[string]strin
 			variants[ind] = int64(j)
 		}
 		if !contains(variants, value) {
-			validationError := ValidationError{}
-			validationError.Field = name
-			validationError.Err = errorValidateIn
-			v.validationErrors = append(v.validationErrors, validationError)
+			v.appendError(name, errorValidateIn)
 		}
 	}
 
 	_, odd := tag["odd"]
 	if odd {
 		if value%2 == 0 {
-			validationError := ValidationError{}
-			validationError.Field = name
-			validationError.Err = errorValidateOdd
-			v.validationErrors = append(v.validationErrors, validationError)
+			v.appendError(name, errorValidateOdd)
 		}
 	}
 
 	_, even := tag["even"]
 	if even {
 		if value%2 != 0 {
-			validationError := ValidationError{}
-			validationError.Field = name
-			validationError.Err = errorValidateEven
-			v.validationErrors = append(v.validationErrors, validationError)
+			v.appendError(name, errorValidateEven)
 		}
 	}
 
@@ -231,10 +211,7 @@ func (v *Validator) validateFromTag(name string, value interface{}, tag string) 
 	default:
 		_, found := validatorTag["nested"]
 		if !found {
-			validationError := ValidationError{}
-			validationError.Field = name
-			validationError.Err = errorValidateUnsupportedValueType
-			v.validationErrors = append(v.validationErrors, validationError)
+			v.appendError(name, errorValidateUnsupportedValueType)
 		} else {
 			err := v.ValidateStruct(value)
 			if err != nil {
