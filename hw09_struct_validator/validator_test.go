@@ -13,16 +13,19 @@ type UserRole string
 // Test the function on different structures and other types.
 type (
 	BadValidateInt struct {
-		test int `validate:"min:a5|max:5u0"`
+		Test int `validate:"min:aa"`
+	}
+	BadValidateLength struct {
+		Test string `validate:"len:[\b]"`
 	}
 	BadValidateRegexp struct {
-		test string `validate:"regexp:$\asdg\g^"` //nolint:staticcheck,govet
+		Test string `validate:"regexp:[\b]"`
 	}
 	User struct {
 		ID     string `json:"id" validate:"len:36"`
 		Name   string
 		Age    int             `validate:"min:18|max:50"`
-		Email  string          `validate:"regexp:^\\w+@\\w+\\.\\w+$"`
+		Email  string          `validate:"regexp:^\\w+@\\w+\\.\\w+$|len:20|nospaces"`
 		Role   UserRole        `validate:"in:admin,stuff"`
 		Phones []string        `validate:"len:11"`
 		meta   json.RawMessage //nolint:unused
@@ -42,29 +45,47 @@ type (
 		Code int    `validate:"in:200,404,500"`
 		Body string `json:"omitempty"`
 	}
+
+	Product struct {
+		Name        string `validate:"len:15"`
+		Application App    `validate:"nested"`
+	}
+
+	NewRules struct {
+		Odd      int    `validate:"odd"`
+		Even     int    `validate:"even"`
+		BigInt   int64  `validate:"min:0"`
+		NoSpaces string `validate:"nospaces"`
+	}
 )
 
 func TestValidate(t *testing.T) {
 	badParseValidatorTests := []struct {
-		name        string
-		in          interface{}
-		expectedErr error
+		name string
+		in   interface{}
 	}{
 		{
-			name: "Case bad digit in max/min",
+			name: "bad digit in max/min",
 			in: BadValidateInt{
-				test: 12,
+				Test: 12,
 			},
 		},
 		{
-			name: "Case bad regexp pattern",
+			name: "bad regexp pattern",
 			in: BadValidateRegexp{
-				test: "asd@test.ru",
+				Test: "asd@test.ru",
+			},
+		},
+		{
+			name: "bad len",
+			in: BadValidateLength{
+				Test: "sometext",
 			},
 		},
 	}
 	for _, tt := range badParseValidatorTests {
-		t.Run(tt.name, func(t *testing.T) {
+		name := fmt.Sprintf("case %v", tt.name)
+		t.Run(name, func(t *testing.T) {
 			ve := ValidationErrors{}
 			tt := tt
 			t.Parallel()
@@ -80,6 +101,38 @@ func TestValidate(t *testing.T) {
 		expectedErr error
 	}{
 		{
+			in: NewRules{
+				Odd:      1,
+				Even:     2,
+				BigInt:   333,
+				NoSpaces: "GoodText",
+			},
+		},
+		{
+			in: NewRules{
+				Odd:      2,
+				Even:     2,
+				NoSpaces: "GoodText",
+			},
+			expectedErr: errorValidateOdd,
+		},
+		{
+			in: NewRules{
+				Odd:      1,
+				Even:     3,
+				NoSpaces: "GoodText",
+			},
+			expectedErr: errorValidateEven,
+		},
+		{
+			in: NewRules{
+				Odd:      1,
+				Even:     2,
+				NoSpaces: "Bad Text",
+			},
+			expectedErr: errorValidateNoSpaces,
+		},
+		{
 			in: Token{
 				Header:    []byte("Header...."),
 				Payload:   []byte("Payload...."),
@@ -89,9 +142,15 @@ func TestValidate(t *testing.T) {
 		{
 			in: Response{
 				Code: 201,
-				Body: "",
+				Body: "bad res",
 			},
 			expectedErr: errorValidateIn,
+		},
+		{
+			in: Response{
+				Code: 200,
+				Body: "good res",
+			},
 		},
 		{
 			in: User{
@@ -103,6 +162,33 @@ func TestValidate(t *testing.T) {
 				Phones: []string{"999-8888-88-8"},
 			},
 			expectedErr: errorValidateMin,
+		},
+		{
+			in: User{
+				ID:     "test",
+				Name:   "Test",
+				Age:    23,
+				Email:  "test2@somemail.tu",
+				Role:   UserRole("stuff"),
+				Phones: []string{"999-8888-8"},
+			},
+			expectedErr: errorValidateUnsupportedValueType,
+		},
+		{
+			in: Product{
+				Name: "Test",
+				Application: App{
+					Version: "0.0.1",
+				},
+			},
+		},
+		{
+			in:          10,
+			expectedErr: errorUnsupportedType,
+		},
+		{
+			in:          make(chan []int),
+			expectedErr: errorUnsupportedType,
 		},
 	}
 
