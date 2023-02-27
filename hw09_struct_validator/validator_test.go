@@ -18,14 +18,10 @@ type (
 		Test  int `validate:"len:10"`
 		Test2 int `validate:"undefined"`
 	}
-	BadValidateInt struct {
-		Test int `validate:"min:aa"`
-	}
-	BadValidateLength struct {
-		Test string `validate:"len:[\b]"`
-	}
-	BadValidateRegexp struct {
-		Test string `validate:"regexp:[\b]"`
+	BadValidateArgs struct {
+		Test  int    `validate:"min:aa"`
+		Test2 string `validate:"len:[\b]"`
+		Test3 string `validate:"regexp:[\b]"`
 	}
 	User struct {
 		ID     string `json:"id" validate:"len:36"`
@@ -70,30 +66,8 @@ func TestValidate(t *testing.T) {
 		name string
 		in   interface{}
 	}{
-		{
-			name: "wrong validator",
-			in: UnsupportedValidateInt{
-				Test: 12,
-			},
-		},
-		{
-			name: "bad digit in max/min",
-			in: BadValidateInt{
-				Test: 12,
-			},
-		},
-		{
-			name: "bad regexp pattern",
-			in: BadValidateRegexp{
-				Test: "asd@test.ru",
-			},
-		},
-		{
-			name: "bad len",
-			in: BadValidateLength{
-				Test: "sometext",
-			},
-		},
+		{name: "wrong validator", in: UnsupportedValidateInt{Test: 12}},
+		{name: "bad validation args", in: BadValidateArgs{Test: 12, Test2: "sometext", Test3: "asd@test.ru"}},
 	}
 	for _, tt := range badParseValidatorTests {
 		name := fmt.Sprintf("case %v", tt.name)
@@ -111,38 +85,10 @@ func TestValidate(t *testing.T) {
 		in          interface{}
 		expectedErr error
 	}{
-		{
-			in: NewRules{
-				Odd:      1,
-				Even:     2,
-				BigInt:   333,
-				NoSpaces: "GoodText",
-			},
-		},
-		{
-			in: NewRules{
-				Odd:      2,
-				Even:     2,
-				NoSpaces: "GoodText",
-			},
-			expectedErr: errorValidateOdd,
-		},
-		{
-			in: NewRules{
-				Odd:      1,
-				Even:     3,
-				NoSpaces: "GoodText",
-			},
-			expectedErr: errorValidateEven,
-		},
-		{
-			in: NewRules{
-				Odd:      1,
-				Even:     2,
-				NoSpaces: "Bad Text",
-			},
-			expectedErr: errorValidateNoSpaces,
-		},
+		{in: NewRules{Odd: 1, Even: 2, BigInt: 333, NoSpaces: "GoodText"}},
+		{in: NewRules{Odd: 2, Even: 2, NoSpaces: "GoodText"}, expectedErr: errorValidateOdd},
+		{in: NewRules{Odd: 1, Even: 3, NoSpaces: "GoodText"}, expectedErr: errorValidateEven},
+		{in: NewRules{Odd: 1, Even: 2, NoSpaces: "Bad Text"}, expectedErr: errorValidateNoSpaces},
 		{
 			in: Token{
 				Header:    []byte("Header...."),
@@ -150,19 +96,8 @@ func TestValidate(t *testing.T) {
 				Signature: []byte("Signature...."),
 			},
 		},
-		{
-			in: Response{
-				Code: 201,
-				Body: "bad res",
-			},
-			expectedErr: errorValidateIn,
-		},
-		{
-			in: Response{
-				Code: 200,
-				Body: "good res",
-			},
-		},
+		{in: Response{Code: 201, Body: "bad res"}, expectedErr: errorValidateIn},
+		{in: Response{Code: 200, Body: "good res"}},
 		{
 			in: User{
 				ID:     "test",
@@ -193,19 +128,9 @@ func TestValidate(t *testing.T) {
 				},
 			},
 		},
-		{
-			in:          10,
-			expectedErr: errorUnsupportedType,
-		},
-		{
-			in:          make(chan []int),
-			expectedErr: errorUnsupportedType,
-		},
-
-		{
-			in:          i,
-			expectedErr: errorUnsupportedType,
-		},
+		{in: 10, expectedErr: errorUnsupportedType},
+		{in: make(chan []int), expectedErr: errorUnsupportedType},
+		{in: i, expectedErr: errorUnsupportedType},
 	}
 
 	for i, tt := range tests {
