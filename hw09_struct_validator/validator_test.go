@@ -10,8 +10,6 @@ import (
 
 type UserRole string
 
-var i *int
-
 // Test the function on different structures and other types.
 type (
 	UnsupportedValidateInt struct {
@@ -62,6 +60,8 @@ type (
 )
 
 func TestValidate(t *testing.T) {
+	var i *int
+
 	badParseValidatorTests := []struct {
 		name string
 		in   interface{}
