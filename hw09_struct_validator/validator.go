@@ -11,6 +11,7 @@ import (
 
 var (
 	errorUnsupportedType              = errors.New("unsupported element type")
+	errorUnsupportedValidateTag       = errors.New("unsupported validate tag")
 	errorValidateStringLength         = errors.New("bad string length")
 	errorValidateStringRegexp         = errors.New("bad regexp matching")
 	errorValidateIn                   = errors.New("no matches")
@@ -79,8 +80,10 @@ func (v *Validator) appendError(name string, e error) {
 }
 
 func (v *Validator) validateString(name, value string, tag map[string]string) error {
+	var isRunning bool
 	count := tag["len"]
 	if count != "" {
+		isRunning = true
 		countInt, err := strconv.Atoi(count)
 		if err != nil {
 			return err
@@ -92,6 +95,7 @@ func (v *Validator) validateString(name, value string, tag map[string]string) er
 
 	stringPattern := tag["regexp"]
 	if stringPattern != "" {
+		isRunning = true
 		pattern, err := regexp.Compile(stringPattern)
 		if err != nil {
 			return err
@@ -103,6 +107,7 @@ func (v *Validator) validateString(name, value string, tag map[string]string) er
 
 	variantsStr := tag["in"]
 	if variantsStr != "" {
+		isRunning = true
 		variants := strings.Split(variantsStr, ",")
 		if !contains(variants, value) {
 			v.appendError(name, errorValidateIn)
@@ -111,17 +116,24 @@ func (v *Validator) validateString(name, value string, tag map[string]string) er
 
 	_, isNoSpaces := tag["nospaces"]
 	if isNoSpaces {
+		isRunning = true
 		if strings.Contains(value, " ") {
 			v.appendError(name, errorValidateNoSpaces)
 		}
+	}
+
+	if !isRunning {
+		return errorUnsupportedValidateTag
 	}
 
 	return nil
 }
 
 func (v *Validator) validateInt64(name string, value int64, tag map[string]string) error {
+	var isRunning bool
 	minSt := tag["min"]
 	if minSt != "" {
+		isRunning = true
 		min, err := strconv.Atoi(minSt)
 		if err != nil {
 			return err
@@ -133,6 +145,7 @@ func (v *Validator) validateInt64(name string, value int64, tag map[string]strin
 
 	maxSt := tag["max"]
 	if maxSt != "" {
+		isRunning = true
 		max, err := strconv.Atoi(maxSt)
 		if err != nil {
 			return err
@@ -144,6 +157,7 @@ func (v *Validator) validateInt64(name string, value int64, tag map[string]strin
 
 	variantsStr := tag["in"]
 	if variantsStr != "" {
+		isRunning = true
 		variantsSt := strings.Split(variantsStr, ",")
 		variants := make([]int64, len(variantsSt))
 		for ind, el := range variantsSt {
@@ -160,6 +174,7 @@ func (v *Validator) validateInt64(name string, value int64, tag map[string]strin
 
 	_, odd := tag["odd"]
 	if odd {
+		isRunning = true
 		if value%2 == 0 {
 			v.appendError(name, errorValidateOdd)
 		}
@@ -167,9 +182,14 @@ func (v *Validator) validateInt64(name string, value int64, tag map[string]strin
 
 	_, even := tag["even"]
 	if even {
+		isRunning = true
 		if value%2 != 0 {
 			v.appendError(name, errorValidateEven)
 		}
+	}
+
+	if !isRunning {
+		return errorUnsupportedValidateTag
 	}
 
 	return nil

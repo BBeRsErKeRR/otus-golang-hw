@@ -14,6 +14,10 @@ var i *int
 
 // Test the function on different structures and other types.
 type (
+	UnsupportedValidateInt struct {
+		Test  int `validate:"len:10"`
+		Test2 int `validate:"undefined"`
+	}
 	BadValidateInt struct {
 		Test int `validate:"min:aa"`
 	}
@@ -66,6 +70,12 @@ func TestValidate(t *testing.T) {
 		name string
 		in   interface{}
 	}{
+		{
+			name: "wrong validator",
+			in: UnsupportedValidateInt{
+				Test: 12,
+			},
+		},
 		{
 			name: "bad digit in max/min",
 			in: BadValidateInt{
@@ -207,6 +217,39 @@ func TestValidate(t *testing.T) {
 				require.ErrorAs(t, err, &tt.expectedErr, fmt.Sprintf("Expected '%v', but not found.", tt.expectedErr))
 			} else {
 				require.NoError(t, err)
+			}
+		})
+	}
+
+	manyErrorsTests := []struct {
+		in             interface{}
+		expectedErrors []error
+	}{
+		{
+			in: User{
+				ID:     "BIIIIIGGGGGGGGGGGGGGGGGGGGGGLENGTHHHHHHHHHHHH",
+				Name:   "Test",
+				Age:    51,
+				Email:  "test2somemail.tu",
+				Role:   UserRole("stuff"),
+				Phones: []string{"999-8888-8"},
+			},
+			expectedErrors: []error{
+				errorValidateUnsupportedValueType,
+				errorValidateStringLength,
+				errorValidateMax,
+				errorValidateStringRegexp,
+			},
+		},
+	}
+
+	for i, tt := range manyErrorsTests {
+		t.Run(fmt.Sprintf("case many errors %d", i), func(t *testing.T) {
+			tt := tt
+			t.Parallel()
+			err := Validate(tt.in)
+			for _, expected := range tt.expectedErrors {
+				require.ErrorAs(t, err, &expected, fmt.Sprintf("Expected '%v', but not found.", expected))
 			}
 		})
 	}
