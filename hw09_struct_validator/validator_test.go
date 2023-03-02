@@ -25,7 +25,7 @@ type (
 		ID     string `json:"id" validate:"len:36"`
 		Name   string
 		Age    int             `validate:"min:18|max:50"`
-		Email  string          `validate:"regexp:^\\w+@\\w+\\.\\w+$|len:20|nospaces"`
+		Email  string          `validate:"regexp:^\\w+@\\w+\\.\\w+$|len:10|nospaces"`
 		Role   UserRole        `validate:"in:admin,stuff"`
 		Phones []string        `validate:"len:11"`
 		meta   json.RawMessage //nolint:unused
@@ -155,7 +155,7 @@ func TestValidate(t *testing.T) {
 				ID:     "BIIIIIGGGGGGGGGGGGGGGGGGGGGGLENGTHHHHHHHHHHHH",
 				Name:   "Test",
 				Age:    51,
-				Email:  "test2somemail.tu",
+				Email:  "Test bad email striiiingggg",
 				Role:   UserRole("stuff"),
 				Phones: []string{"999-8888-8"},
 			},
@@ -164,6 +164,7 @@ func TestValidate(t *testing.T) {
 				errorValidateStringLength,
 				errorValidateMax,
 				errorValidateStringRegexp,
+				errorValidateNoSpaces,
 			},
 		},
 	}
