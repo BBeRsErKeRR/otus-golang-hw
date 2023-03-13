@@ -7,18 +7,8 @@ import (
 	"regexp"
 	"strings"
 
-	"github.com/valyala/fastjson"
+	"github.com/buger/jsonparser"
 )
-
-type User struct {
-	ID       int
-	Name     string
-	Username string
-	Email    string
-	Phone    string
-	Password string
-	Address  string
-}
 
 type DomainStat map[string]int
 
@@ -30,37 +20,113 @@ func GetDomainStat(r io.Reader, domain string) (DomainStat, error) {
 	return countDomains(u, domain)
 }
 
-type usersEmails [100_000]string
-
-func getUsers(r io.Reader) (result usersEmails, err error) {
-	fileScanner := bufio.NewScanner(r)
-	fileScanner.Split(bufio.ScanLines)
-	var (
-		i int
-	)
-	var p fastjson.Parser
-	for fileScanner.Scan() {
-		var v *fastjson.Value
-		if v, err = p.ParseBytes(fileScanner.Bytes()); err != nil {
-			return
-		}
-		result[i] = string(v.GetStringBytes("Email"))
-		i++
-	}
-	return
+type User struct {
+	ID       int
+	Name     string
+	Username string
+	Email    string
+	Phone    string
+	Password string
+	Address  string
 }
 
-func countDomains(u usersEmails, domain string) (DomainStat, error) {
+type UsersWithErr struct {
+	Users chan User
+	Err   chan error
+}
+
+func parseJSONUser(input []byte) (User, error) {
+	var (
+		user User
+		err  error
+	)
+	err = jsonparser.ObjectEach(input,
+		func(key []byte, value []byte, dataType jsonparser.ValueType, offset int) error {
+			switch string(key) {
+			case "Id":
+				v, err := jsonparser.ParseInt(value)
+				if err != nil {
+					return err
+				}
+				user.ID = int(v)
+			case "Name":
+				user.Name, err = jsonparser.ParseString(value)
+				if err != nil {
+					return err
+				}
+			case "Username":
+				user.Username, err = jsonparser.ParseString(value)
+				if err != nil {
+					return err
+				}
+			case "Email":
+				user.Email, err = jsonparser.ParseString(value)
+				if err != nil {
+					return err
+				}
+			case "Phone":
+				user.Phone, err = jsonparser.ParseString(value)
+				if err != nil {
+					return err
+				}
+			case "Password":
+				user.Password, err = jsonparser.ParseString(value)
+				if err != nil {
+					return err
+				}
+			case "Address":
+				user.Address, err = jsonparser.ParseString(value)
+				if err != nil {
+					return err
+				}
+			}
+			return nil
+		})
+	return user, err
+}
+
+func getUsers(r io.Reader) (result UsersWithErr, err error) { //nolint:unparam
+	result.Users = make(chan User)
+	result.Err = make(chan error, 1)
+	go func() {
+		defer close(result.Users)
+		fileScanner := bufio.NewScanner(r)
+		fileScanner.Split(bufio.ScanLines)
+		for fileScanner.Scan() {
+			user, err := parseJSONUser(fileScanner.Bytes())
+			if err != nil {
+				result.Err <- err
+				return
+			}
+			result.Users <- user
+		}
+	}()
+	return result, nil
+}
+
+func countDomains(usersWithErr UsersWithErr, domain string) (DomainStat, error) {
 	result := make(DomainStat)
 	re, err := regexp.Compile("\\." + domain)
 	if err != nil {
-		return nil, err
+		return result, err
 	}
 
-	for _, uE := range u {
-		if re.Match([]byte(uE)) {
-			result[strings.ToLower(strings.SplitN(uE, "@", 2)[1])]++
+	for {
+		select {
+		case err := <-usersWithErr.Err:
+			return nil, err
+		case u, ok := <-usersWithErr.Users:
+			select {
+			case err := <-usersWithErr.Err:
+				return nil, err
+			default:
+				if re.Match([]byte(u.Email)) {
+					result[strings.ToLower(strings.SplitN(u.Email, "@", 2)[1])]++
+				}
+			}
+			if !ok {
+				return result, nil
+			}
 		}
 	}
-	return result, nil
 }
