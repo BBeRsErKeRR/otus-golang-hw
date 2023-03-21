@@ -33,7 +33,7 @@ func (tc *telnetClient) transfer(in io.Reader, out io.Writer) error {
 }
 
 func (tc *telnetClient) Connect() error {
-	conn, err := net.DialTimeout("tcp4", tc.address, tc.timeout)
+	conn, err := net.DialTimeout("tcp", tc.address, tc.timeout)
 	if err != nil {
 		return err
 	}

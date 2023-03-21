@@ -67,19 +67,18 @@ func main() {
 
 	defer tc.Close()
 
-	ctx, stop := signal.NotifyContext(context.Background(), syscall.SIGQUIT, syscall.SIGINT)
+	ctx, stop := signal.NotifyContext(context.Background(), syscall.SIGQUIT, syscall.SIGTERM, syscall.SIGINT)
 
 	go func() {
 		defer stop()
-		if err := tc.Receive(); err != nil {
+		if err := tc.Send(); err != nil {
 			fmt.Fprint(os.Stderr, err)
-			return
 		}
 	}()
 
 	go func() {
 		defer stop()
-		if err := tc.Send(); err != nil {
+		if err := tc.Receive(); err != nil {
 			fmt.Fprint(os.Stderr, err)
 		}
 	}()
