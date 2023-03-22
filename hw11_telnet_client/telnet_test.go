@@ -62,4 +62,25 @@ func TestTelnetClient(t *testing.T) {
 
 		wg.Wait()
 	})
+
+	t.Run("timeout error", func(t *testing.T) {
+		in := &bytes.Buffer{}
+		out := &bytes.Buffer{}
+
+		client := NewTelnetClient("localhost:", time.Second, io.NopCloser(in), out)
+		require.Error(t, client.Connect())
+	})
+
+	t.Run("unreachable", func(t *testing.T) {
+		in := &bytes.Buffer{}
+		out := &bytes.Buffer{}
+
+		timeout, err := time.ParseDuration("5s")
+		require.NoError(t, err)
+
+		client := NewTelnetClient("", timeout, io.NopCloser(in), out)
+		require.Error(t, client.Send(), ErrorNilConnection)
+		require.Error(t, client.Receive(), ErrorNilConnection)
+		require.NoError(t, client.Close())
+	})
 }
