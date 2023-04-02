@@ -1,0 +1,12 @@
+version: '3.7'
+
+#===============STORAGE==============#
+
+#====================================#
+
+networks:
+  calendar:
+    driver: bridge
+
+volumes:
+  postgres_data:

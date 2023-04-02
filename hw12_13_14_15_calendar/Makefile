@@ -1,34 +1,42 @@
+### Calendar app automation recieps
+# ¯¯¯¯¯¯¯¯
+
+.DEFAULT_GOAL := help
+
+SHELL=/bin/bash
+SHELLOPTS:=$(if $(SHELLOPTS),$(SHELLOPTS):)pipefail:errexit
+
 BIN := "./bin/calendar"
-DOCKER_IMG="calendar:develop"
 
-GIT_HASH := $(shell git log --format="%h" -n 1)
-LDFLAGS := -X main.release="develop" -X main.buildDate=$(shell date -u +%Y-%m-%dT%H:%M:%S) -X main.gitHash=$(GIT_HASH)
 
-build:
+help: ## Display this help
+	@IFS=$$'\n'; for line in `grep -h -E '^[a-zA-Z_#-]+:?.*?## .*$$' $(MAKEFILE_LIST)`; do if [ "$${line:0:2}" = "##" ]; then \
+	echo $$line | awk 'BEGIN {FS = "## "}; {printf "\n\033[33m%s\033[0m\n", $$2}'; else \
+	echo $$line | awk 'BEGIN {FS = ":.*?## "}; {printf "\033[36m%-30s\033[0m %s\n", $$1, $$2}'; fi; \
+	done; unset IFS;
+
+build: ## Build application
 	go build -v -o $(BIN) -ldflags "$(LDFLAGS)" ./cmd/calendar
 
-run: build
+run: build ## Run calendar app
 	$(BIN) -config ./configs/config.toml
 
-build-img:
-	docker build \
-		--build-arg=LDFLAGS="$(LDFLAGS)" \
-		-t $(DOCKER_IMG) \
-		-f build/Dockerfile .
-
-run-img: build-img
-	docker run $(DOCKER_IMG)
-
-version: build
+version: build  ## Project version
 	$(BIN) version
 
-test:
-	go test -race ./internal/... ./pkg/...
+test: ## Execute tests
+	go test -race --tags=integration ./internal/...
+
+coverage: ## test coverage
+	go test --tags=integration -coverprofile=coverage.out ./...
+	go tool cover -html coverage.out
 
 install-lint-deps:
 	(which golangci-lint > /dev/null) || curl -sSfL https://raw.githubusercontent.com/golangci/golangci-lint/master/install.sh | sh -s -- -b $(shell go env GOPATH)/bin v1.50.1
 
-lint: install-lint-deps
+lint: install-lint-deps ## Run liniter
 	golangci-lint run ./...
 
-.PHONY: build run build-img run-img version test lint
+.PHONY: build run version test lint help
+
+include make/docker.mk
