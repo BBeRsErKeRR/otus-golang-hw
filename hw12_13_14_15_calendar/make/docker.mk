@@ -10,7 +10,7 @@ DOCKER_IMG="calendar:develop"
 
 define __COMPOSE_CMD
 source $(DOCKER_MAKE_DIR).env && \
-		docker-compose -f $(DOCKER_MAKE_DIR)docker-compose.yml
+		docker-compose -f $(DOCKER_MAKE_DIR)deployments/docker-compose.yml -p CALENDAR
 endef
 
 .PHONY: run-img
@@ -33,8 +33,8 @@ service-stop:
 	@$(__COMPOSE_CMD) stop $(_SERVICE)
 
 .PHONY: service-down
-service-down:
-	@$(__COMPOSE_CMD) down -v $(_SERVICE)
+service-down: ## Remove all services
+	@$(__COMPOSE_CMD) down -v
 
 .PHONY: service-restart
 service-restart:
@@ -42,7 +42,7 @@ service-restart:
 
 .PHONY: service-attach
 service-attach:
-	@$(__COMPOSE_CMD) exec $(_SERVICE) sh
+	@$(__COMPOSE_CMD) exec $(_SERVICE) bash
 
 .PHONY: service-logs
 service-logs:
@@ -52,14 +52,18 @@ service-logs:
 service-status: ## See current services status
 	@$(__COMPOSE_CMD) ps
 
-.PHONY: calendar_postgres-up
-calendar_postgres-up: ## Up dev postgress
+.PHONY: postgres-up
+postgres-up: ## Up dev postgress
 	$(MAKE) _SERVICE=calendar_postgres service-up
 
-.PHONY: calendar_postgres-stop
-calendar_postgres-stop: ## Stop dev postgress
+.PHONY: postgres-stop
+postgres-stop: ## Stop dev postgress
 	$(MAKE) _SERVICE=calendar_postgres service-stop
 
-.PHONY: calendar_postgres-logs
-calendar_postgres-logs: ## See dev postgress logs
+.PHONY: postgres-logs
+postgres-logs: ## See dev postgress logs
 	$(MAKE) _SERVICE=calendar_postgres service-logs
+
+.PHONY: postgres-attach
+postgres-attach: ## Attach to psql container
+	$(MAKE) _SERVICE=calendar_postgres service-attach

@@ -10,6 +10,7 @@ WORKDIR ${CODE_DIR}
 COPY go.mod .
 COPY go.sum .
 RUN go mod download
+RUN go get -u github.com/pressly/goose/cmd/goose
 
 COPY . ${CODE_DIR}
 

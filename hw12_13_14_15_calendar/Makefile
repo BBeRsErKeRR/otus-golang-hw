@@ -37,6 +37,23 @@ install-lint-deps:
 lint: install-lint-deps ## Run liniter
 	golangci-lint run --config=$$(pwd)/../.golangci.yml --path-prefix=hw12_13_14_15_calendar ./...
 
-.PHONY: build run version test lint help
+goose:
+	@(goose --version) || go install github.com/pressly/goose/v3/cmd/goose@latest
+
+define __GOOSE_CMD
+source make/.env && \
+	goose --dir migrations postgres "postgres://$${DB_USERNAME}:$${DB_PASSWORD}@localhost:5532/$${DB_DATABASE}?sslmode=disable"
+endef
+
+migrate: ## Update db items 
+	$(__GOOSE_CMD) up
+
+downgrade: ## Downgrade db items
+	$(__GOOSE_CMD) down
+
+migration_status: ## Current migrations status
+	$(__GOOSE_CMD) status
+
+.PHONY: build run version test lint help coverage goose
 
 include make/docker.mk
