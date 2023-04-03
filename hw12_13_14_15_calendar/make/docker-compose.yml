@@ -1,7 +1,19 @@
 version: '3.7'
-
+services:
 #===============STORAGE==============#
-
+  calendar_postgres:
+    image: bitnami/postgresql:14
+    hostname: control_camunda_postgres
+    environment:
+      POSTGRESQL_PASSWORD: ${DB_USERNAME}
+      POSTGRESQL_USERNAME: ${DB_PASSWORD}
+      POSTGRESQL_DATABASE:  ${DB_DATABASE}
+    ports:
+      - "5532:5432"
+    volumes:
+      - postgres_data:/bitnami/postgresql
+    networks:
+      calendar:
 #====================================#
 
 networks:
