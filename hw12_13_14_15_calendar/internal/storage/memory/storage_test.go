@@ -50,7 +50,7 @@ func TestStorage(t *testing.T) {
 				mEvent := events[0]
 				mEvent.Title = newTitle
 				mEvent.Date = newDate
-				err = st.UpdateEvent(ctx, mEvent)
+				err = st.UpdateEvent(ctx, mEvent.ID, mEvent)
 				if err != nil {
 					return err
 				}

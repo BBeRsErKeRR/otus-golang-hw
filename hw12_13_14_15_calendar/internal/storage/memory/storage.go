@@ -26,7 +26,7 @@ func (st *Storage) CreateEvent(ctx context.Context, event storage.Event) error {
 	return nil
 }
 
-func (st *Storage) UpdateEvent(ctx context.Context, event storage.Event) error {
+func (st *Storage) UpdateEvent(ctx context.Context, eventID int32, event storage.Event) error {
 	err := st.eventValidate(event)
 	if err != nil {
 		return err
@@ -34,7 +34,7 @@ func (st *Storage) UpdateEvent(ctx context.Context, event storage.Event) error {
 
 	st.mu.Lock()
 	defer st.mu.Unlock()
-	_, ok := st.events[event.ID]
+	_, ok := st.events[eventID]
 	if !ok {
 		return storage.ErrNotExist
 	}
