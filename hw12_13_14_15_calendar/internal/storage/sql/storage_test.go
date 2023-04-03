@@ -1,4 +1,4 @@
-package memorystorage
+package sqlstorage
 
 import (
 	"context"
@@ -16,6 +16,17 @@ var errEmpty = errors.New("empty result")
 
 func TestStorage(t *testing.T) {
 	ctx := context.Background()
+	config := storage.Config{
+		Host:     "localhost",
+		Port:     "5532",
+		Storage:  "sql",
+		Driver:   "postgres",
+		Ssl:      "disable",
+		Database: "calendar",
+		User:     "calendar",
+		Password: "passwd",
+	}
+
 	testcases := []struct {
 		Name   string
 		Event  storage.Event
@@ -116,8 +127,10 @@ func TestStorage(t *testing.T) {
 
 	for _, testcase := range testcases {
 		t.Run(testcase.Name, func(t *testing.T) {
-			memStorage := New()
-			err := testcase.Action(testcase.Event, memStorage, ctx)
+			st := New(&config)
+			require.NoError(t, st.Connect(ctx))
+			err := testcase.Action(testcase.Event, st, ctx)
+			require.NoError(t, st.Close(ctx))
 			require.ErrorIs(t, err, testcase.Err)
 		})
 	}

@@ -10,7 +10,7 @@ import (
 )
 
 type Storage struct {
-	events map[int32]storage.Event
+	events map[string]storage.Event
 	mu     sync.RWMutex
 }
 
@@ -21,12 +21,12 @@ func (st *Storage) CreateEvent(ctx context.Context, event storage.Event) error {
 	}
 	st.mu.Lock()
 	defer st.mu.Unlock()
-	event.ID = int32(uuid.New().ID())
+	event.ID = uuid.New().String()
 	st.events[event.ID] = event
 	return nil
 }
 
-func (st *Storage) UpdateEvent(ctx context.Context, eventID int32, event storage.Event) error {
+func (st *Storage) UpdateEvent(ctx context.Context, eventID string, event storage.Event) error {
 	err := st.eventValidate(event)
 	if err != nil {
 		return err
@@ -43,7 +43,7 @@ func (st *Storage) UpdateEvent(ctx context.Context, eventID int32, event storage
 	return nil
 }
 
-func (st *Storage) DeleteEvent(ctx context.Context, eventID int32) error {
+func (st *Storage) DeleteEvent(ctx context.Context, eventID string) error {
 	st.mu.Lock()
 	defer st.mu.Unlock()
 	if _, ok := st.events[eventID]; !ok {
@@ -81,6 +81,6 @@ func (st *Storage) eventValidate(event storage.Event) error {
 
 func New() *Storage {
 	return &Storage{
-		events: map[int32]storage.Event{},
+		events: map[string]storage.Event{},
 	}
 }

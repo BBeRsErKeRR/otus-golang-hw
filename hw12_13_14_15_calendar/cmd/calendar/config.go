@@ -3,6 +3,7 @@ package main
 import (
 	"github.com/BBeRsErKeRR/otus-golang-hw/hw12_13_14_15_calendar/internal/config"
 	"github.com/BBeRsErKeRR/otus-golang-hw/hw12_13_14_15_calendar/internal/logger"
+	"github.com/BBeRsErKeRR/otus-golang-hw/hw12_13_14_15_calendar/internal/storage"
 )
 
 // При желании конфигурацию можно вынести в internal/config.
@@ -14,20 +15,9 @@ type Config struct {
 }
 
 type AppConf struct {
-	Host     string    `mapstructure:"host"`
-	Port     string    `mapstructure:"port"`
-	Database *DBConfig `mapstructure:"database"`
-}
-
-type DBConfig struct {
-	Host     string `mapstructure:"host"`
-	Port     string `mapstructure:"port"`
-	Storage  string `mapstructure:"storage"`
-	Driver   string `mapstructure:"driver"`
-	Ssl      string `mapstructure:"ssl"`
-	Database string `mapstructure:"db"`
-	User     string `mapstructure:"user"`
-	Password string `mapstructure:"password"`
+	Host     string          `mapstructure:"host"`
+	Port     string          `mapstructure:"port"`
+	Database *storage.Config `mapstructure:"database"`
 }
 
 func NewConfig(configFile string) (Config, error) {

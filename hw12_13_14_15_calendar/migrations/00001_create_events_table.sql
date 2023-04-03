@@ -2,13 +2,13 @@
 -- +goose StatementBegin
 CREATE TABLE IF NOT EXISTS events
 (
-    id UUID PRIMARY KEY,
+    id VARCHAR ( 50 ) PRIMARY KEY,
     title TEXT NOT NULL,
     date TIMESTAMP NOT NULL,
-    duration INTERVAL SECOND(0) NOT NULL,
+    duration TIME NOT NULL,
     description TEXT,
-    user_id UUID NOT NULL,
-    remind_date INTERVAL SECOND(0)
+    user_id VARCHAR ( 50 ) NOT NULL,
+    remind_date TIME
 );
 
 CREATE INDEX event_date_idx

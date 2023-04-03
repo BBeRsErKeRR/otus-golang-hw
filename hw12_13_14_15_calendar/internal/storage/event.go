@@ -16,23 +16,13 @@ var (
 )
 
 type Event struct {
-	ID         int32         `db:"id"`
+	ID         string        `db:"id"`
 	Title      string        `db:"title"`
 	Date       time.Time     `db:"date"`
 	Duration   time.Duration `db:"duration"`
 	Desc       string        `db:"description"`
-	UserID     int32         `db:"user_id"`
+	UserID     string        `db:"user_id"`
 	RemindDate time.Duration `db:"remind_date"`
-}
-
-type Storage interface {
-	CreateEvent(context.Context, Event) error
-	UpdateEvent(context.Context, int32, Event) error
-	DeleteEvent(context.Context, int32) error
-	GetDailyEvents(context.Context, time.Time) ([]Event, error)
-	GetWeeklyEvents(context.Context, time.Time) ([]Event, error)
-	GetMonthlyEvents(context.Context, time.Time) ([]Event, error)
-	validateEvent(Event) error
 }
 
 type EventUseCase struct {
@@ -47,7 +37,7 @@ func (u *EventUseCase) Create(ctx context.Context, event Event) error {
 	return nil
 }
 
-func (u *EventUseCase) Update(ctx context.Context, eventID int32, event Event) error {
+func (u *EventUseCase) Update(ctx context.Context, eventID interface{}, event Event) error {
 	err := u.storage.UpdateEvent(ctx, eventID, event)
 	if err != nil {
 		return fmt.Errorf("EventUseCase - UpdateEvent - u.storage.UpdateEvent: %w", err)
@@ -55,7 +45,7 @@ func (u *EventUseCase) Update(ctx context.Context, eventID int32, event Event) e
 	return nil
 }
 
-func (u *EventUseCase) Delete(ctx context.Context, eventID int32) error {
+func (u *EventUseCase) Delete(ctx context.Context, eventID interface{}) error {
 	err := u.storage.DeleteEvent(ctx, eventID)
 	if err != nil {
 		return fmt.Errorf("EventUseCase - DeleteEvent - u.storage.DeleteEvent: %w", err)
@@ -97,7 +87,7 @@ func ValidateEvent(event Event) error {
 	switch {
 	case event.Title == "":
 		return ErrEventTitle
-	case event.UserID == 0:
+	case event.UserID == "":
 		return ErrEventUserID
 	case event.Date.IsZero():
 		return ErrEventDate
