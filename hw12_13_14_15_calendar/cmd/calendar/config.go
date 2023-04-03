@@ -9,17 +9,17 @@ import (
 // Организация конфига в main принуждает нас сужать API компонентов, использовать
 // при их конструировании только необходимые параметры, а также уменьшает вероятность циклической зависимости.
 type Config struct {
-	Logger *logger.LoggerConf `mapstructure:"logger"`
-	App    *AppConf           `mapstructure:"app"`
+	Logger *logger.Config `mapstructure:"logger"`
+	App    *AppConf       `mapstructure:"app"`
 }
 
 type AppConf struct {
 	Host     string    `mapstructure:"host"`
 	Port     string    `mapstructure:"port"`
-	Database *DbConfig `mapstructure:"database"`
+	Database *DBConfig `mapstructure:"database"`
 }
 
-type DbConfig struct {
+type DBConfig struct {
 	Host     string `mapstructure:"host"`
 	Port     string `mapstructure:"port"`
 	Storage  string `mapstructure:"storage"`

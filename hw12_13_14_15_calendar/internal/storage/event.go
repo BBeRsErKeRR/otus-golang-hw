@@ -16,13 +16,13 @@ var (
 )
 
 type Event struct {
-	ID         int32         `json:"id"`
-	Title      string        `json:"title"`
-	Date       time.Time     `json:"date"`
-	Duration   time.Duration `json:"duration"`
-	Desc       string        `json:"desc"`
-	UserId     int32         `json:"user_id"`
-	RemindDate time.Duration `json:"remind_date"`
+	ID         int32         `db:"id"`
+	Title      string        `db:"title"`
+	Date       time.Time     `db:"date"`
+	Duration   time.Duration `db:"duration"`
+	Desc       string        `db:"desc"`
+	UserID     int32         `db:"user_id"`
+	RemindDate time.Duration `db:"remind_date"`
 }
 
 type Storage interface {
@@ -54,8 +54,9 @@ func (u *EventUseCase) Update(ctx context.Context, event Event) error {
 	}
 	return nil
 }
-func (u *EventUseCase) Delete(ctx context.Context, eventId int32) error {
-	err := u.storage.DeleteEvent(ctx, eventId)
+
+func (u *EventUseCase) Delete(ctx context.Context, eventID int32) error {
+	err := u.storage.DeleteEvent(ctx, eventID)
 	if err != nil {
 		return fmt.Errorf("EventUseCase - DeleteEvent - u.storage.DeleteEvent: %w", err)
 	}
@@ -96,7 +97,7 @@ func ValidateEvent(event Event) error {
 	switch {
 	case event.Title == "":
 		return ErrEventTitle
-	case event.UserId == "":
+	case event.UserID == 0:
 		return ErrEventUserID
 	case event.Date.IsZero():
 		return ErrEventDate

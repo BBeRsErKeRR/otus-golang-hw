@@ -3,16 +3,13 @@ package main
 import (
 	"context"
 	"log"
-	"os"
 	"os/signal"
 	"syscall"
-	"time"
 
 	"github.com/BBeRsErKeRR/otus-golang-hw/hw12_13_14_15_calendar/internal/app"
 	"github.com/BBeRsErKeRR/otus-golang-hw/hw12_13_14_15_calendar/internal/logger"
 	internalhttp "github.com/BBeRsErKeRR/otus-golang-hw/hw12_13_14_15_calendar/internal/server/http"
 	memorystorage "github.com/BBeRsErKeRR/otus-golang-hw/hw12_13_14_15_calendar/internal/storage/memory"
-
 	"github.com/spf13/cobra"
 )
 
@@ -31,7 +28,6 @@ var rootCmd = &cobra.Command{
 		}
 
 		logg, err := logger.New(config.Logger)
-
 		if err != nil {
 			log.Println("Error create app logger: " + err.Error())
 			return
@@ -43,34 +39,23 @@ var rootCmd = &cobra.Command{
 		server := internalhttp.NewServer(logg, calendar)
 
 		go func() {
-			<-ctx.Done()
-
-			ctx, cancel := context.WithTimeout(context.Background(), time.Second*3)
-			defer cancel()
-
-			if err := server.Stop(ctx); err != nil {
-				logg.Error("failed to stop http server: " + err.Error())
+			if err := server.Start(); err != nil {
+				logg.Error("failed to start http server: " + err.Error())
+				cancel()
 			}
 		}()
 
-		logg.Info("calendar is running...")
+		defer server.Stop()
 
-		if err := server.Start(ctx); err != nil {
-			logg.Error("failed to start http server: " + err.Error())
-			cancel()
-			os.Exit(1) //nolint:gocritic
-		}
-
+		<-ctx.Done()
 	},
 }
 
-// Execute executes the root command.
 func Execute() error {
 	return rootCmd.Execute()
 }
 
 func init() {
 	rootCmd.PersistentFlags().StringVar(&cfgFile, "config", "./configs/config.toml", "Configuration file path")
-
 	rootCmd.AddCommand(versionCmd)
 }

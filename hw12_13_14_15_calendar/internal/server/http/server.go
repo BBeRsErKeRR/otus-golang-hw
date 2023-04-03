@@ -1,9 +1,5 @@
 package internalhttp
 
-import (
-	"context"
-)
-
 type Server struct { // TODO
 }
 
@@ -17,13 +13,12 @@ func NewServer(logger Logger, app Application) *Server {
 	return &Server{}
 }
 
-func (s *Server) Start(ctx context.Context) error {
+func (s *Server) Start() error {
 	// TODO
-	<-ctx.Done()
 	return nil
 }
 
-func (s *Server) Stop(ctx context.Context) error {
+func (s *Server) Stop() error {
 	// TODO
 	return nil
 }

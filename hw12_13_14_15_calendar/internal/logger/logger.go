@@ -5,7 +5,7 @@ import (
 	"go.uber.org/zap/zapcore"
 )
 
-type LoggerConf struct {
+type Config struct {
 	Level    string   `mapstructure:"level"`
 	OutPaths []string `mapstructure:"out_paths"`
 	ErrPaths []string `mapstructure:"err_paths"`
@@ -38,7 +38,7 @@ func (l logger) Warn(msg string, args ...zapcore.Field) {
 	l.log.Warn(msg, args...)
 }
 
-func New(conf *LoggerConf) (Logger, error) {
+func New(conf *Config) (Logger, error) {
 	logLevel, err := zap.ParseAtomicLevel(conf.Level)
 	if err != nil {
 		return nil, err

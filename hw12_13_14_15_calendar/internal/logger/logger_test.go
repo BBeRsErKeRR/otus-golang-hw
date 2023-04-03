@@ -1,12 +1,11 @@
 package logger
 
 import (
-	"fmt"
-	"testing"
-
 	"bytes"
+	"fmt"
 	"io"
 	"os"
+	"testing"
 
 	"github.com/stretchr/testify/require"
 )
@@ -56,7 +55,7 @@ func TestLogger(t *testing.T) {
 		t.Run(testcase.Name, func(t *testing.T) {
 			level := testcase.LogLevel
 
-			conf := &LoggerConf{
+			conf := &Config{
 				Level:    level,
 				OutPaths: []string{"stdout"},
 				ErrPaths: []string{"stderr"},
@@ -81,19 +80,19 @@ func TestLogger(t *testing.T) {
 			os.Stdout = bcp
 			output := <-outC
 
-			require.Contains(t, string(output), fmt.Sprintf(`"level":"%s"`, level))
-			require.Contains(t, string(output), fmt.Sprintf(`"msg":"%s"`, testcase.Result))
+			require.Contains(t, output, fmt.Sprintf(`"level":"%s"`, level))
+			require.Contains(t, output, fmt.Sprintf(`"msg":"%s"`, testcase.Result))
 		})
 	}
 
 	regresscases := []struct {
 		Name     string
 		Expected string
-		Config   *LoggerConf
+		Config   *Config
 	}{
 		{
 			Name: "bad level value case",
-			Config: &LoggerConf{
+			Config: &Config{
 				Level:    "bad_level",
 				OutPaths: []string{"stdout"},
 				ErrPaths: []string{"stderr"},
@@ -102,7 +101,7 @@ func TestLogger(t *testing.T) {
 		},
 		{
 			Name: "bad output paths",
-			Config: &LoggerConf{
+			Config: &Config{
 				Level:    "info",
 				OutPaths: []string{"http://100"},
 				ErrPaths: []string{"stderr"},
