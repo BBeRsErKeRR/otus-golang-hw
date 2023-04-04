@@ -8,21 +8,21 @@ import (
 )
 
 var (
-	ErrEventTitle    = errors.New("empty event title")
-	ErrEventDate     = errors.New("empty event date")
-	ErrEventDuration = errors.New("empty event duration")
-	ErrEventUserID   = errors.New("empty event user id")
-	ErrNotExist      = errors.New("event not exist")
+	ErrEventTitle   = errors.New("empty event title")
+	ErrEventDate    = errors.New("empty event date")
+	ErrEventEndDate = errors.New("empty event end date")
+	ErrEventUserID  = errors.New("empty event user id")
+	ErrNotExist     = errors.New("event not exist")
 )
 
 type Event struct {
-	ID         string        `db:"id"`
-	Title      string        `db:"title"`
-	Date       time.Time     `db:"date"`
-	Duration   time.Duration `db:"duration"`
-	Desc       string        `db:"description"`
-	UserID     string        `db:"user_id"`
-	RemindDate time.Duration `db:"remind_date"`
+	ID         string    `db:"id"`
+	Title      string    `db:"title"`
+	Date       time.Time `db:"date"`
+	EndDate    time.Time `db:"end_date"`
+	Desc       string    `db:"description"`
+	UserID     string    `db:"user_id"`
+	RemindDate time.Time `db:"remind_date"`
 }
 
 type EventUseCase struct {
@@ -91,8 +91,8 @@ func ValidateEvent(event Event) error {
 		return ErrEventUserID
 	case event.Date.IsZero():
 		return ErrEventDate
-	case event.Duration == 0:
-		return ErrEventDuration
+	case event.EndDate.IsZero():
+		return ErrEventEndDate
 	}
 	return nil
 }

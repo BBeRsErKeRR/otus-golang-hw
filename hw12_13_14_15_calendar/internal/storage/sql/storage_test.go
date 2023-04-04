@@ -1,3 +1,5 @@
+//go:build func_test
+
 package sqlstorage
 
 import (
@@ -40,8 +42,8 @@ func TestStorage(t *testing.T) {
 				Desc:       "this is the test event 1",
 				UserID:     uuid.New().String(),
 				Date:       time.Now(),
-				Duration:   2 * time.Hour,
-				RemindDate: time.Hour,
+				EndDate:    time.Now().Add(3 * time.Hour),
+				RemindDate: time.Now().Add(2 * time.Hour),
 			},
 			Action: func(event storage.Event, st *Storage, ctx context.Context) error {
 				err := st.CreateEvent(ctx, event)
@@ -87,8 +89,8 @@ func TestStorage(t *testing.T) {
 				Desc:       "this is the test event 1",
 				UserID:     uuid.New().String(),
 				Date:       time.Now(),
-				Duration:   2 * time.Hour,
-				RemindDate: time.Hour,
+				EndDate:    time.Now().Add(4 * time.Hour),
+				RemindDate: time.Now().Add(2 * time.Hour),
 			},
 			Action: func(event storage.Event, st *Storage, ctx context.Context) error {
 				return st.CreateEvent(context.Background(), event)
@@ -96,18 +98,18 @@ func TestStorage(t *testing.T) {
 			Err: storage.ErrEventTitle,
 		},
 		{
-			Name: "invalid duration",
+			Name: "invalid end date",
 			Event: storage.Event{
 				Title:      "some event 1",
 				Desc:       "this is the test event 1",
 				UserID:     uuid.New().String(),
 				Date:       time.Now(),
-				RemindDate: time.Hour,
+				RemindDate: time.Now().Add(2 * time.Hour),
 			},
 			Action: func(event storage.Event, st *Storage, ctx context.Context) error {
 				return st.CreateEvent(context.Background(), event)
 			},
-			Err: storage.ErrEventDuration,
+			Err: storage.ErrEventEndDate,
 		},
 		{
 			Name: "invalid date",
@@ -115,8 +117,8 @@ func TestStorage(t *testing.T) {
 				Title:      "some event 1",
 				Desc:       "this is the test event 1",
 				UserID:     uuid.New().String(),
-				Duration:   2 * time.Hour,
-				RemindDate: time.Hour,
+				EndDate:    time.Now().Add(22 * time.Hour),
+				RemindDate: time.Now().Add(20 * time.Hour),
 			},
 			Action: func(event storage.Event, st *Storage, ctx context.Context) error {
 				return st.CreateEvent(context.Background(), event)

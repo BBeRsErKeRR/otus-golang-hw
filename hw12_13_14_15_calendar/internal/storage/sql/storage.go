@@ -9,7 +9,7 @@ import (
 
 	"github.com/BBeRsErKeRR/otus-golang-hw/hw12_13_14_15_calendar/internal/storage"
 	"github.com/google/uuid"
-	_ "github.com/jackc/pgx/v5/stdlib" //nolint:blank-imports
+	_ "github.com/jackc/pgx/stdlib"
 	"github.com/jmoiron/sqlx"
 )
 
@@ -45,12 +45,13 @@ func (st *Storage) Close(ctx context.Context) error {
 
 func New(conf *storage.Config) *Storage {
 	dsn := fmt.Sprintf(
-		"postgres://%s:%s@%s:%s/%s",
+		"postgres://%s:%s@%s:%s/%s?sslmode=%s",
 		conf.User,
 		conf.Password,
 		conf.Host,
 		conf.Port,
 		conf.Database,
+		conf.Ssl,
 	)
 
 	return &Storage{
@@ -64,7 +65,7 @@ func (st *Storage) execNamedQuery(ctx context.Context, query string, event stora
 	}
 	stmt, err := st.db.PrepareNamed(query)
 	if err != nil {
-		return nil, err
+		return nil, fmt.Errorf("can't prepare query:\n%v\n%w", query, err)
 	}
 	defer stmt.Close()
 	res, err := stmt.ExecContext(ctx, event)
@@ -76,8 +77,8 @@ func (st *Storage) execNamedQuery(ctx context.Context, query string, event stora
 }
 
 const createEventQ = `
-INSERT INTO events(id, title, date, duration, description, user_id, remind_date) 
-	VALUES (:id, :title, :date, :duration, :description, :user_id, :remind_date)
+INSERT INTO events(id, title, date, end_date, description, user_id, remind_date) 
+	VALUES (:id, :title, :date, :end_date, :description, :user_id, :remind_date)
 `
 
 func (st *Storage) CreateEvent(ctx context.Context, event storage.Event) error {
@@ -94,7 +95,7 @@ const updateEventQ = `
 UPDATE events 
 	SET title = :title, 
 		date = :date, 
-		duration = :duration, 
+		end_date = :end_date, 
 		description = :description, 
 		user_id = :user_id,
 		remind_date = :remind_date
@@ -132,7 +133,7 @@ func (st *Storage) DeleteEvent(ctx context.Context, eventID string) error {
 const getEventsByPeriodQ = `
 SELECT * FROM events 
 WHERE date>=$1 
-	AND date<=$2
+	AND end_date<=$2
 `
 
 func (st *Storage) getEventsByPeriod(ctx context.Context, start, end time.Time) ([]storage.Event, error) {
@@ -140,19 +141,9 @@ func (st *Storage) getEventsByPeriod(ctx context.Context, start, end time.Time) 
 	if st.db == nil {
 		return res, ErrNotInitDB
 	}
-
-	data, err := st.db.QueryxContext(ctx, getEventsByPeriodQ, start, end)
+	err := st.db.SelectContext(ctx, &res, getEventsByPeriodQ, start, end)
 	if err != nil {
 		return res, err
-	}
-	defer data.Close()
-	for data.Next() {
-		event := storage.Event{}
-		err := data.StructScan(&event)
-		if err != nil {
-			return res, err
-		}
-		res = append(res, event)
 	}
 	return res, nil
 }
