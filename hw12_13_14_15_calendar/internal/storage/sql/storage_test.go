@@ -1,4 +1,4 @@
-//go:build func_test
+//go:build integration
 
 package sqlstorage
 
@@ -6,15 +6,22 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"reflect"
 	"testing"
 	"time"
+	"unsafe"
 
 	"github.com/BBeRsErKeRR/otus-golang-hw/hw12_13_14_15_calendar/internal/storage"
 	"github.com/google/uuid"
+	"github.com/jmoiron/sqlx"
 	"github.com/stretchr/testify/require"
 )
 
 var errEmpty = errors.New("empty result")
+
+func getUnexportedField(field reflect.Value) interface{} {
+	return reflect.NewAt(field.Type(), unsafe.Pointer(field.UnsafeAddr())).Elem().Interface()
+}
 
 func TestStorage(t *testing.T) {
 	ctx := context.Background()
@@ -32,7 +39,7 @@ func TestStorage(t *testing.T) {
 	testcases := []struct {
 		Name   string
 		Event  storage.Event
-		Action func(event storage.Event, st *Storage, ctx context.Context) error
+		Action func(ctx context.Context, st *Storage, event storage.Event) error
 		Err    error
 	}{
 		{
@@ -45,7 +52,13 @@ func TestStorage(t *testing.T) {
 				EndDate:    time.Now().Add(3 * time.Hour),
 				RemindDate: time.Now().Add(2 * time.Hour),
 			},
-			Action: func(event storage.Event, st *Storage, ctx context.Context) error {
+			Action: func(ctx context.Context, st *Storage, event storage.Event) error {
+				field := reflect.Indirect(reflect.ValueOf(st)).FieldByName("db")
+				db := getUnexportedField(field).(*sqlx.DB)
+				if _, err := db.Exec(`TRUNCATE TABLE events`); err != nil {
+					return err
+				}
+
 				err := st.CreateEvent(ctx, event)
 				if err != nil {
 					return err
@@ -75,10 +88,14 @@ func TestStorage(t *testing.T) {
 					return errEmpty
 				}
 				assertEvent := mEvents[0]
-				if assertEvent.ID != mEvent.ID ||
-					assertEvent.Title != newTitle ||
-					assertEvent.Date != newDate {
-					return fmt.Errorf("failed assertion got %v found %v", event, assertEvent)
+				if assertEvent.ID != mEvent.ID {
+					return fmt.Errorf("failed assertion expect '%v' found '%v'", mEvent.ID, assertEvent.ID)
+				}
+				if assertEvent.Title != newTitle {
+					return fmt.Errorf("failed title assertion expect '%v' found '%v", newTitle, assertEvent.Title)
+				}
+				if newDate.Equal(assertEvent.Date) {
+					return fmt.Errorf("failed date assertion expect '%v' found '%v", newDate, assertEvent.Date)
 				}
 				return nil
 			},
@@ -92,7 +109,7 @@ func TestStorage(t *testing.T) {
 				EndDate:    time.Now().Add(4 * time.Hour),
 				RemindDate: time.Now().Add(2 * time.Hour),
 			},
-			Action: func(event storage.Event, st *Storage, ctx context.Context) error {
+			Action: func(ctx context.Context, st *Storage, event storage.Event) error {
 				return st.CreateEvent(context.Background(), event)
 			},
 			Err: storage.ErrEventTitle,
@@ -106,7 +123,7 @@ func TestStorage(t *testing.T) {
 				Date:       time.Now(),
 				RemindDate: time.Now().Add(2 * time.Hour),
 			},
-			Action: func(event storage.Event, st *Storage, ctx context.Context) error {
+			Action: func(ctx context.Context, st *Storage, event storage.Event) error {
 				return st.CreateEvent(context.Background(), event)
 			},
 			Err: storage.ErrEventEndDate,
@@ -120,7 +137,7 @@ func TestStorage(t *testing.T) {
 				EndDate:    time.Now().Add(22 * time.Hour),
 				RemindDate: time.Now().Add(20 * time.Hour),
 			},
-			Action: func(event storage.Event, st *Storage, ctx context.Context) error {
+			Action: func(ctx context.Context, st *Storage, event storage.Event) error {
 				return st.CreateEvent(context.Background(), event)
 			},
 			Err: storage.ErrEventDate,
@@ -131,7 +148,7 @@ func TestStorage(t *testing.T) {
 		t.Run(testcase.Name, func(t *testing.T) {
 			st := New(&config)
 			require.NoError(t, st.Connect(ctx))
-			err := testcase.Action(testcase.Event, st, ctx)
+			err := testcase.Action(ctx, st, testcase.Event)
 			require.NoError(t, st.Close(ctx))
 			require.ErrorIs(t, err, testcase.Err)
 		})

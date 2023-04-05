@@ -9,7 +9,7 @@ import (
 
 	"github.com/BBeRsErKeRR/otus-golang-hw/hw12_13_14_15_calendar/internal/storage"
 	"github.com/google/uuid"
-	_ "github.com/jackc/pgx/stdlib"
+	_ "github.com/jackc/pgx/stdlib" //nolint:blank-imports
 	"github.com/jmoiron/sqlx"
 )
 

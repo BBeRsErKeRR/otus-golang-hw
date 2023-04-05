@@ -19,7 +19,7 @@ func TestStorage(t *testing.T) {
 	testcases := []struct {
 		Name   string
 		Event  storage.Event
-		Action func(event storage.Event, st *Storage, ctx context.Context) error
+		Action func(ctx context.Context, st *Storage, event storage.Event) error
 		Err    error
 	}{
 		{
@@ -32,7 +32,7 @@ func TestStorage(t *testing.T) {
 				EndDate:    time.Now().Add(4 * time.Hour),
 				RemindDate: time.Now().Add(3 * time.Hour),
 			},
-			Action: func(event storage.Event, st *Storage, ctx context.Context) error {
+			Action: func(ctx context.Context, st *Storage, event storage.Event) error {
 				err := st.CreateEvent(ctx, event)
 				if err != nil {
 					return err
@@ -79,7 +79,7 @@ func TestStorage(t *testing.T) {
 				EndDate:    time.Now().Add(4 * time.Hour),
 				RemindDate: time.Now().Add(2 * time.Hour),
 			},
-			Action: func(event storage.Event, st *Storage, ctx context.Context) error {
+			Action: func(ctx context.Context, st *Storage, event storage.Event) error {
 				return st.CreateEvent(context.Background(), event)
 			},
 			Err: storage.ErrEventTitle,
@@ -93,7 +93,7 @@ func TestStorage(t *testing.T) {
 				Date:       time.Now(),
 				RemindDate: time.Now().Add(2 * time.Hour),
 			},
-			Action: func(event storage.Event, st *Storage, ctx context.Context) error {
+			Action: func(ctx context.Context, st *Storage, event storage.Event) error {
 				return st.CreateEvent(context.Background(), event)
 			},
 			Err: storage.ErrEventEndDate,
@@ -107,7 +107,7 @@ func TestStorage(t *testing.T) {
 				EndDate:    time.Now().Add(4 * time.Hour),
 				RemindDate: time.Now().Add(3 * time.Hour),
 			},
-			Action: func(event storage.Event, st *Storage, ctx context.Context) error {
+			Action: func(ctx context.Context, st *Storage, event storage.Event) error {
 				return st.CreateEvent(context.Background(), event)
 			},
 			Err: storage.ErrEventDate,
@@ -117,7 +117,7 @@ func TestStorage(t *testing.T) {
 	for _, testcase := range testcases {
 		t.Run(testcase.Name, func(t *testing.T) {
 			memStorage := New()
-			err := testcase.Action(testcase.Event, memStorage, ctx)
+			err := testcase.Action(ctx, memStorage, testcase.Event)
 			require.ErrorIs(t, err, testcase.Err)
 		})
 	}

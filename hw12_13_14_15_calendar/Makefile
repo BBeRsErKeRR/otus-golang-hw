@@ -27,8 +27,15 @@ version: build  ## Project version
 test: ## Execute tests
 	go test -race ./internal/...
 
-coverage: ## test coverage
-	go test -coverprofile=coverage.out ./internal/...
+wait-for-db:
+	sleep 5
+
+integration: postgres-up wait-for-db migrate ## Execute integration tests
+	go test --tags=$@ -race ./internal/...
+
+
+coverage: postgres-up wait-for-db migrate ## test coverage
+	go test --tags=integration -coverprofile=coverage.out ./internal/...
 	go tool cover -html coverage.out
 
 install-lint-deps:

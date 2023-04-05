@@ -56,7 +56,7 @@ func (st *Storage) DeleteEvent(ctx context.Context, eventID string) error {
 func (st *Storage) getEventsByPeriod(start, end time.Time) ([]storage.Event, error) {
 	res := make([]storage.Event, 0, len(st.events))
 	for _, e := range st.events {
-		if e.Date.After(start) && e.Date.Before(end) {
+		if e.Date.After(start) && e.EndDate.Before(end) {
 			res = append(res, e)
 		}
 	}
