@@ -76,6 +76,8 @@ func TestStorage(t *testing.T) {
 				mEvent := events[0]
 				mEvent.Title = newTitle
 				mEvent.Date = newDate
+				mEvent.EndDate = newDate.Add(4 * time.Hour)
+				mEvent.RemindDate = newDate.Add(3 * time.Hour)
 				err = st.UpdateEvent(ctx, mEvent.ID, mEvent)
 				if err != nil {
 					return err
@@ -103,11 +105,9 @@ func TestStorage(t *testing.T) {
 		{
 			Name: "invalid title",
 			Event: storage.Event{
-				Desc:       "this is the test event 1",
-				UserID:     uuid.New().String(),
-				Date:       time.Now(),
-				EndDate:    time.Now().Add(4 * time.Hour),
-				RemindDate: time.Now().Add(2 * time.Hour),
+				UserID:  uuid.New().String(),
+				Date:    time.Now(),
+				EndDate: time.Now().Add(4 * time.Hour),
 			},
 			Action: func(ctx context.Context, st *Storage, event storage.Event) error {
 				return st.CreateEvent(context.Background(), event)
@@ -117,11 +117,9 @@ func TestStorage(t *testing.T) {
 		{
 			Name: "invalid end date",
 			Event: storage.Event{
-				Title:      "some event 1",
-				Desc:       "this is the test event 1",
-				UserID:     uuid.New().String(),
-				Date:       time.Now(),
-				RemindDate: time.Now().Add(2 * time.Hour),
+				Title:  "some event 1",
+				UserID: uuid.New().String(),
+				Date:   time.Now(),
 			},
 			Action: func(ctx context.Context, st *Storage, event storage.Event) error {
 				return st.CreateEvent(context.Background(), event)
@@ -131,11 +129,9 @@ func TestStorage(t *testing.T) {
 		{
 			Name: "invalid date",
 			Event: storage.Event{
-				Title:      "some event 1",
-				Desc:       "this is the test event 1",
-				UserID:     uuid.New().String(),
-				EndDate:    time.Now().Add(22 * time.Hour),
-				RemindDate: time.Now().Add(20 * time.Hour),
+				Title:   "some event 1",
+				UserID:  uuid.New().String(),
+				EndDate: time.Now().Add(22 * time.Hour),
 			},
 			Action: func(ctx context.Context, st *Storage, event storage.Event) error {
 				return st.CreateEvent(context.Background(), event)

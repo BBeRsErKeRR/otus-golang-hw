@@ -46,10 +46,11 @@ func TestStorage(t *testing.T) {
 				}
 				newTitle := "modified event 1"
 				newDate := time.Now().AddDate(0, 0, 1)
-
 				mEvent := events[0]
 				mEvent.Title = newTitle
 				mEvent.Date = newDate
+				mEvent.EndDate = newDate.Add(4 * time.Hour)
+				mEvent.RemindDate = newDate.Add(3 * time.Hour)
 				err = st.UpdateEvent(ctx, mEvent.ID, mEvent)
 				if err != nil {
 					return err
@@ -73,11 +74,9 @@ func TestStorage(t *testing.T) {
 		{
 			Name: "invalid title",
 			Event: storage.Event{
-				Desc:       "this is the test event 1",
-				UserID:     uuid.New().String(),
-				Date:       time.Now(),
-				EndDate:    time.Now().Add(4 * time.Hour),
-				RemindDate: time.Now().Add(2 * time.Hour),
+				UserID:  uuid.New().String(),
+				Date:    time.Now(),
+				EndDate: time.Now().Add(4 * time.Hour),
 			},
 			Action: func(ctx context.Context, st *Storage, event storage.Event) error {
 				return st.CreateEvent(context.Background(), event)
@@ -87,11 +86,9 @@ func TestStorage(t *testing.T) {
 		{
 			Name: "invalid duration",
 			Event: storage.Event{
-				Title:      "some event 1",
-				Desc:       "this is the test event 1",
-				UserID:     uuid.New().String(),
-				Date:       time.Now(),
-				RemindDate: time.Now().Add(2 * time.Hour),
+				Title:  "some event 1",
+				UserID: uuid.New().String(),
+				Date:   time.Now(),
 			},
 			Action: func(ctx context.Context, st *Storage, event storage.Event) error {
 				return st.CreateEvent(context.Background(), event)
@@ -101,11 +98,9 @@ func TestStorage(t *testing.T) {
 		{
 			Name: "invalid date",
 			Event: storage.Event{
-				Title:      "some event 1",
-				Desc:       "this is the test event 1",
-				UserID:     uuid.New().String(),
-				EndDate:    time.Now().Add(4 * time.Hour),
-				RemindDate: time.Now().Add(3 * time.Hour),
+				Title:   "some event 1",
+				UserID:  uuid.New().String(),
+				EndDate: time.Now().Add(4 * time.Hour),
 			},
 			Action: func(ctx context.Context, st *Storage, event storage.Event) error {
 				return st.CreateEvent(context.Background(), event)
@@ -121,4 +116,52 @@ func TestStorage(t *testing.T) {
 			require.ErrorIs(t, err, testcase.Err)
 		})
 	}
+
+	t.Run("some get check", func(t *testing.T) {
+		memStorage := Storage{
+			events: map[string]storage.Event{
+				uuid.New().String(): {
+					Title:      "not exist",
+					UserID:     uuid.New().String(),
+					Date:       time.Now().Add(-48 * time.Hour),
+					EndDate:    time.Now().Add(-24 * time.Hour),
+					RemindDate: time.Now().Add(-26 * time.Hour),
+				},
+				uuid.New().String(): {
+					Title:      "some event 1",
+					Desc:       "this is the test event 1",
+					UserID:     uuid.New().String(),
+					Date:       time.Now(),
+					EndDate:    time.Now().Add(4 * time.Hour),
+					RemindDate: time.Now().Add(3 * time.Hour),
+				},
+				uuid.New().String(): {
+					Title:      "some event 2",
+					Desc:       "this is the test event 2",
+					UserID:     uuid.New().String(),
+					Date:       time.Now().Add(24 * time.Hour),
+					EndDate:    time.Now().Add(26 * time.Hour),
+					RemindDate: time.Now().Add(25 * time.Hour),
+				},
+				uuid.New().String(): {
+					Title:      "some event 3",
+					Desc:       "this is the test event 3",
+					UserID:     uuid.New().String(),
+					Date:       time.Now().AddDate(0, 0, 14),
+					EndDate:    time.Now().AddDate(0, 0, 15),
+					RemindDate: time.Now().AddDate(0, 0, 14).Add(3 * time.Hour),
+				},
+			},
+		}
+		testDate := time.Now().Add(-4 * time.Minute)
+		dayEvents, err := memStorage.GetDailyEvents(ctx, testDate)
+		require.NoError(t, err)
+		require.Equal(t, 1, len(dayEvents))
+		weekEvents, err := memStorage.GetWeeklyEvents(ctx, testDate)
+		require.NoError(t, err)
+		require.Equal(t, 2, len(weekEvents))
+		monthEvents, err := memStorage.GetMonthlyEvents(ctx, testDate)
+		require.NoError(t, err)
+		require.Equal(t, 3, len(monthEvents))
+	})
 }

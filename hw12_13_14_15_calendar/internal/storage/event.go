@@ -5,14 +5,17 @@ import (
 	"errors"
 	"fmt"
 	"time"
+
+	"github.com/google/uuid"
 )
 
 var (
-	ErrEventTitle   = errors.New("empty event title")
-	ErrEventDate    = errors.New("empty event date")
-	ErrEventEndDate = errors.New("empty event end date")
-	ErrEventUserID  = errors.New("empty event user id")
-	ErrNotExist     = errors.New("event not exist")
+	ErrEventTitle         = errors.New("empty event title")
+	ErrEventDate          = errors.New("empty event date")
+	ErrEventEndDate       = errors.New("empty event end date")
+	ErrEventUserID        = errors.New("empty event user id")
+	ErrNotExist           = errors.New("event not exist")
+	ErrNotValidRemindDate = errors.New("remind date invalid")
 )
 
 type Event struct {
@@ -83,16 +86,21 @@ func New(st Storage) *EventUseCase {
 	}
 }
 
-func ValidateEvent(event Event) error {
+func ValidateEvent(e Event) error {
 	switch {
-	case event.Title == "":
+	case e.Title == "":
 		return ErrEventTitle
-	case event.UserID == "":
-		return ErrEventUserID
-	case event.Date.IsZero():
+	case e.Date.IsZero():
 		return ErrEventDate
-	case event.EndDate.IsZero():
+	case e.EndDate.IsZero():
 		return ErrEventEndDate
+	case !e.RemindDate.IsZero() && (!e.RemindDate.After(e.Date) || !e.RemindDate.Before(e.EndDate)):
+		return ErrNotValidRemindDate
 	}
+
+	if _, err := uuid.Parse(e.UserID); err != nil {
+		return ErrEventUserID
+	}
+
 	return nil
 }
