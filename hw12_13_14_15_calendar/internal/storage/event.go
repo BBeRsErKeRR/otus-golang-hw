@@ -41,7 +41,7 @@ func (u *EventUseCase) Create(ctx context.Context, event Event) error {
 	return nil
 }
 
-func (u *EventUseCase) Update(ctx context.Context, eventID interface{}, event Event) error {
+func (u *EventUseCase) Update(ctx context.Context, eventID string, event Event) error {
 	err := u.storage.UpdateEvent(ctx, eventID, event)
 	if err != nil {
 		return fmt.Errorf("EventUseCase - UpdateEvent - u.storage.UpdateEvent: %w", err)
@@ -49,7 +49,7 @@ func (u *EventUseCase) Update(ctx context.Context, eventID interface{}, event Ev
 	return nil
 }
 
-func (u *EventUseCase) Delete(ctx context.Context, eventID interface{}) error {
+func (u *EventUseCase) Delete(ctx context.Context, eventID string) error {
 	err := u.storage.DeleteEvent(ctx, eventID)
 	if err != nil {
 		return fmt.Errorf("EventUseCase - DeleteEvent - u.storage.DeleteEvent: %w", err)

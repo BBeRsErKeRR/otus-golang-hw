@@ -2,25 +2,36 @@ package app
 
 import (
 	"context"
+
+	"github.com/BBeRsErKeRR/otus-golang-hw/hw12_13_14_15_calendar/internal/logger"
+	"github.com/BBeRsErKeRR/otus-golang-hw/hw12_13_14_15_calendar/internal/storage"
+	memorystorage "github.com/BBeRsErKeRR/otus-golang-hw/hw12_13_14_15_calendar/internal/storage/memory"
+	sqlstorage "github.com/BBeRsErKeRR/otus-golang-hw/hw12_13_14_15_calendar/internal/storage/sql"
 )
 
-type App struct { // TODO
+type App struct {
+	logger logger.Logger
+	u      storage.EventUseCase
 }
 
-type Logger interface { // TODO
-}
-
-type Storage interface { // TODO
-}
-
-func New(logger Logger, storage Storage) *App {
-	return &App{}
+func New(logger logger.Logger, u storage.EventUseCase) *App {
+	return &App{
+		logger: logger,
+		u:      u,
+	}
 }
 
 func (a *App) CreateEvent(ctx context.Context, id, title string) error {
-	// TODO
-	return nil
-	// return a.storage.CreateEvent(storage.Event{ID: id, Title: title})
+	return a.u.Create(ctx, storage.Event{ID: id, Title: title})
 }
 
-// TODO
+func getStorage(cfg *storage.Config) storage.Storage {
+	if cfg.Storage == "postgres" {
+		return sqlstorage.New(cfg)
+	}
+	return memorystorage.New()
+}
+
+func GetEventUseCase(cfg *storage.Config) storage.EventUseCase {
+	return *storage.New(getStorage(cfg))
+}

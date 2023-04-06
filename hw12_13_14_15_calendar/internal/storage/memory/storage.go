@@ -15,7 +15,7 @@ type Storage struct {
 }
 
 func (st *Storage) CreateEvent(ctx context.Context, event storage.Event) error {
-	err := st.eventValidate(event)
+	err := st.ValidateEvent(event)
 	if err != nil {
 		return err
 	}
@@ -27,7 +27,7 @@ func (st *Storage) CreateEvent(ctx context.Context, event storage.Event) error {
 }
 
 func (st *Storage) UpdateEvent(ctx context.Context, eventID string, event storage.Event) error {
-	err := st.eventValidate(event)
+	err := st.ValidateEvent(event)
 	if err != nil {
 		return err
 	}
@@ -75,7 +75,7 @@ func (st *Storage) GetMonthlyEvents(ctx context.Context, date time.Time) ([]stor
 	return st.getEventsByPeriod(date, date.AddDate(0, 1, 0))
 }
 
-func (st *Storage) eventValidate(event storage.Event) error {
+func (st *Storage) ValidateEvent(event storage.Event) error {
 	return storage.ValidateEvent(event)
 }
 

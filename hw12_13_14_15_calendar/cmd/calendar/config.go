@@ -3,6 +3,7 @@ package main
 import (
 	"github.com/BBeRsErKeRR/otus-golang-hw/hw12_13_14_15_calendar/internal/config"
 	"github.com/BBeRsErKeRR/otus-golang-hw/hw12_13_14_15_calendar/internal/logger"
+	internalhttp "github.com/BBeRsErKeRR/otus-golang-hw/hw12_13_14_15_calendar/internal/server/http"
 	"github.com/BBeRsErKeRR/otus-golang-hw/hw12_13_14_15_calendar/internal/storage"
 )
 
@@ -15,9 +16,8 @@ type Config struct {
 }
 
 type AppConf struct {
-	Host     string          `mapstructure:"host"`
-	Port     string          `mapstructure:"port"`
-	Database *storage.Config `mapstructure:"database"`
+	HttpServer *internalhttp.Config `mapstructure:"http_server"`
+	Database   *storage.Config      `mapstructure:"database"`
 }
 
 func NewConfig(configFile string) (Config, error) {

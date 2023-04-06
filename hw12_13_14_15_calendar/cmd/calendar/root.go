@@ -9,7 +9,6 @@ import (
 	"github.com/BBeRsErKeRR/otus-golang-hw/hw12_13_14_15_calendar/internal/app"
 	"github.com/BBeRsErKeRR/otus-golang-hw/hw12_13_14_15_calendar/internal/logger"
 	internalhttp "github.com/BBeRsErKeRR/otus-golang-hw/hw12_13_14_15_calendar/internal/server/http"
-	memorystorage "github.com/BBeRsErKeRR/otus-golang-hw/hw12_13_14_15_calendar/internal/storage/memory"
 	"github.com/spf13/cobra"
 )
 
@@ -33,13 +32,13 @@ var rootCmd = &cobra.Command{
 			return
 		}
 
-		storage := memorystorage.New()
+		storage := app.GetEventUseCase(config.App.Database)
 		calendar := app.New(logg, storage)
 
-		server := internalhttp.NewServer(logg, calendar)
+		server := internalhttp.NewServer(logg, calendar, config.App.HttpServer)
 
 		go func() {
-			if err := server.Start(); err != nil {
+			if err := server.Start(ctx); err != nil {
 				logg.Error("failed to start http server: " + err.Error())
 				cancel()
 			}
