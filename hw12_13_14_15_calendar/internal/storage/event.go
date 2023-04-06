@@ -16,6 +16,7 @@ var (
 	ErrEventUserID        = errors.New("empty event user id")
 	ErrNotExist           = errors.New("event not exist")
 	ErrNotValidRemindDate = errors.New("remind date invalid")
+	ErrNotValidEventDate  = errors.New("date is more then end date")
 )
 
 type Event struct {
@@ -90,12 +91,16 @@ func ValidateEvent(e Event) error {
 	switch {
 	case e.Title == "":
 		return ErrEventTitle
-	case e.Date.IsZero():
-		return ErrEventDate
 	case e.EndDate.IsZero():
 		return ErrEventEndDate
+	case e.Date.IsZero():
+		return ErrEventDate
 	case !e.RemindDate.IsZero() && (!e.RemindDate.After(e.Date) || !e.RemindDate.Before(e.EndDate)):
 		return ErrNotValidRemindDate
+	}
+
+	if e.Date.After(e.EndDate) {
+		return ErrNotValidEventDate
 	}
 
 	if _, err := uuid.Parse(e.UserID); err != nil {

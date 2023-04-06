@@ -141,7 +141,7 @@ func (st *Storage) getEventsByPeriod(ctx context.Context, start, end time.Time) 
 	if st.db == nil {
 		return res, ErrNotInitDB
 	}
-	err := st.db.SelectContext(ctx, &res, getEventsByPeriodQ, start, end)
+	err := st.db.SelectContext(ctx, &res, getEventsByPeriodQ, start.UTC(), end.UTC())
 	if err != nil {
 		return res, err
 	}

@@ -4,6 +4,7 @@ package sqlstorage
 
 import (
 	"context"
+	_ "embed"
 	"errors"
 	"fmt"
 	"reflect"
@@ -18,6 +19,9 @@ import (
 )
 
 var errEmpty = errors.New("empty result")
+
+//go:embed fixture/events.sql
+var query string
 
 func getUnexportedField(field reflect.Value) interface{} {
 	return reflect.NewAt(field.Type(), unsafe.Pointer(field.UnsafeAddr())).Elem().Interface()
@@ -39,7 +43,7 @@ func TestStorage(t *testing.T) {
 	testcases := []struct {
 		Name   string
 		Event  storage.Event
-		Action func(ctx context.Context, st *Storage, event storage.Event) error
+		Action func(ctx context.Context, st *Storage, event storage.Event, db *sqlx.DB) error
 		Err    error
 	}{
 		{
@@ -52,13 +56,10 @@ func TestStorage(t *testing.T) {
 				EndDate:    time.Now().Add(3 * time.Hour),
 				RemindDate: time.Now().Add(2 * time.Hour),
 			},
-			Action: func(ctx context.Context, st *Storage, event storage.Event) error {
-				field := reflect.Indirect(reflect.ValueOf(st)).FieldByName("db")
-				db := getUnexportedField(field).(*sqlx.DB)
+			Action: func(ctx context.Context, st *Storage, event storage.Event, db *sqlx.DB) error {
 				if _, err := db.Exec(`TRUNCATE TABLE events`); err != nil {
 					return err
 				}
-
 				err := st.CreateEvent(ctx, event)
 				if err != nil {
 					return err
@@ -103,40 +104,59 @@ func TestStorage(t *testing.T) {
 			},
 		},
 		{
-			Name: "invalid title",
-			Event: storage.Event{
-				UserID:  uuid.New().String(),
-				Date:    time.Now(),
-				EndDate: time.Now().Add(4 * time.Hour),
-			},
-			Action: func(ctx context.Context, st *Storage, event storage.Event) error {
+			Name:  "invalid title",
+			Event: storage.Event{UserID: uuid.New().String(), Date: time.Now(), EndDate: time.Now().Add(4 * time.Hour)},
+			Action: func(ctx context.Context, st *Storage, event storage.Event, db *sqlx.DB) error {
 				return st.CreateEvent(context.Background(), event)
 			},
 			Err: storage.ErrEventTitle,
 		},
 		{
-			Name: "invalid end date",
-			Event: storage.Event{
-				Title:  "some event 1",
-				UserID: uuid.New().String(),
-				Date:   time.Now(),
-			},
-			Action: func(ctx context.Context, st *Storage, event storage.Event) error {
+			Name:  "invalid end date",
+			Event: storage.Event{Title: "some event 1", UserID: uuid.New().String(), Date: time.Now()},
+			Action: func(ctx context.Context, st *Storage, event storage.Event, db *sqlx.DB) error {
 				return st.CreateEvent(context.Background(), event)
 			},
 			Err: storage.ErrEventEndDate,
 		},
 		{
-			Name: "invalid date",
-			Event: storage.Event{
-				Title:   "some event 1",
-				UserID:  uuid.New().String(),
-				EndDate: time.Now().Add(22 * time.Hour),
-			},
-			Action: func(ctx context.Context, st *Storage, event storage.Event) error {
+			Name:  "invalid date",
+			Event: storage.Event{Title: "some event 1", UserID: uuid.New().String(), EndDate: time.Now().Add(22 * time.Hour)},
+			Action: func(ctx context.Context, st *Storage, event storage.Event, db *sqlx.DB) error {
 				return st.CreateEvent(context.Background(), event)
 			},
 			Err: storage.ErrEventDate,
+		},
+		{
+			Name: "some get check",
+			Action: func(ctx context.Context, st *Storage, event storage.Event, db *sqlx.DB) error {
+				if _, err := db.Exec(query); err != nil {
+					return err
+				}
+				testDate := time.Now().Add(-4 * time.Minute)
+				dayEvents, err := st.GetDailyEvents(ctx, testDate)
+				if err != nil {
+					return err
+				}
+				if len(dayEvents) != 1 {
+					return fmt.Errorf("failed check date '%v' dayEvents '%v' found '%v'", testDate, 1, dayEvents)
+				}
+				weekEvents, err := st.GetWeeklyEvents(ctx, testDate)
+				if err != nil {
+					return err
+				}
+				if len(weekEvents) != 2 {
+					return fmt.Errorf("failed check date '%v' weekEvents '%v' found '%v'", testDate, 2, weekEvents)
+				}
+				monthEvents, err := st.GetMonthlyEvents(ctx, testDate)
+				if err != nil {
+					return err
+				}
+				if len(monthEvents) != 3 {
+					return fmt.Errorf("failed check date '%v' monthEvents '%v' found '%v'", testDate, 3, monthEvents)
+				}
+				return nil
+			},
 		},
 	}
 
@@ -144,7 +164,9 @@ func TestStorage(t *testing.T) {
 		t.Run(testcase.Name, func(t *testing.T) {
 			st := New(&config)
 			require.NoError(t, st.Connect(ctx))
-			err := testcase.Action(ctx, st, testcase.Event)
+			field := reflect.Indirect(reflect.ValueOf(st)).FieldByName("db")
+			db := getUnexportedField(field).(*sqlx.DB)
+			err := testcase.Action(ctx, st, testcase.Event, db)
 			require.NoError(t, st.Close(ctx))
 			require.ErrorIs(t, err, testcase.Err)
 		})
