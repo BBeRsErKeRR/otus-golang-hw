@@ -16,7 +16,7 @@ type Config struct {
 }
 
 type AppConf struct {
-	HttpServer *internalhttp.Config `mapstructure:"http_server"`
+	HTTPServer *internalhttp.Config `mapstructure:"http_server"`
 	Database   *storage.Config      `mapstructure:"database"`
 }
 

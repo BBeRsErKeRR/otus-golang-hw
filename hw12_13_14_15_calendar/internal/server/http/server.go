@@ -33,6 +33,7 @@ type Config struct {
 }
 
 type Application interface {
+	CreateEvent(context.Context, string, string) error
 }
 
 func getAddress(hostArg string, portArg string) (string, error) {

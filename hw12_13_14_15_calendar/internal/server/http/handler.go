@@ -37,10 +37,10 @@ func (h *Handler) sendResponse(data string, status int, w http.ResponseWriter) {
 	w.WriteHeader(status)
 }
 
-func (h *Handler) notFound(w http.ResponseWriter, r *http.Request) {
+func (h *Handler) notFound(w http.ResponseWriter, r *http.Request) { //nolint:unparam
 	h.sendResponse(`{"error":"Not found"}"`, http.StatusNotFound, w)
 }
 
-func (h *Handler) helloWorld(w http.ResponseWriter, r *http.Request) {
+func (h *Handler) helloWorld(w http.ResponseWriter, r *http.Request) { //nolint:unparam
 	h.sendResponse(`{"msg":"Hello, world!"}"`, http.StatusOK, w)
 }

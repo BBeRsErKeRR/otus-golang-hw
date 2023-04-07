@@ -35,7 +35,7 @@ var rootCmd = &cobra.Command{
 		storage := app.GetEventUseCase(config.App.Database)
 		calendar := app.New(logg, storage)
 
-		server := internalhttp.NewServer(logg, calendar, config.App.HttpServer)
+		server := internalhttp.NewServer(logg, calendar, config.App.HTTPServer)
 
 		go func() {
 			if err := server.Start(ctx); err != nil {
