@@ -10,7 +10,10 @@ import (
 	"strconv"
 	"time"
 
+	httprouter "github.com/BBeRsErKeRR/otus-golang-hw/hw12_13_14_15_calendar/api"
+	v1routes "github.com/BBeRsErKeRR/otus-golang-hw/hw12_13_14_15_calendar/api/v1"
 	"github.com/BBeRsErKeRR/otus-golang-hw/hw12_13_14_15_calendar/internal/logger"
+	"github.com/gorilla/mux"
 	"go.uber.org/zap"
 )
 
@@ -30,10 +33,6 @@ type Config struct {
 	ReadTimeout       time.Duration `mapstructure:"read_timeout"`
 	WriteTimeout      time.Duration `mapstructure:"write_timeout"`
 	ReadHeaderTimeout time.Duration `mapstructure:"read_header_timeout"`
-}
-
-type Application interface {
-	CreateEvent(context.Context, string, string) error
 }
 
 func getAddress(hostArg string, portArg string) (string, error) {
@@ -57,15 +56,18 @@ func getAddress(hostArg string, portArg string) (string, error) {
 	return address, nil
 }
 
-func NewServer(logger logger.Logger, app Application, conf *Config) *Server {
+func NewServer(logger logger.Logger, app httprouter.Application, conf *Config) *Server {
 	addr, err := getAddress(conf.Host, conf.Port)
 	if err != nil {
 		log.Fatal(err)
 	}
+	router := mux.NewRouter()
+	handlerV1 := v1routes.NewHandler(app, logger)
+	handlerV1.AddV1Routes(router)
 	return &Server{
 		server: &http.Server{
 			Addr:              addr,
-			Handler:           loggingMiddleware(NewHandler(app, logger), logger),
+			Handler:           loggingMiddleware(router, logger),
 			ReadTimeout:       conf.ReadTimeout,
 			WriteTimeout:      conf.WriteTimeout,
 			ReadHeaderTimeout: conf.ReadHeaderTimeout,
