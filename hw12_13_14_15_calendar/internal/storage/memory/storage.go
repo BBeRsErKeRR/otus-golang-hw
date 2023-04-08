@@ -15,10 +15,6 @@ type Storage struct {
 }
 
 func (st *Storage) CreateEvent(ctx context.Context, event storage.Event) error {
-	err := st.ValidateEvent(event)
-	if err != nil {
-		return err
-	}
 	st.mu.Lock()
 	defer st.mu.Unlock()
 	event.ID = uuid.New().String()
@@ -27,11 +23,6 @@ func (st *Storage) CreateEvent(ctx context.Context, event storage.Event) error {
 }
 
 func (st *Storage) UpdateEvent(ctx context.Context, eventID string, event storage.Event) error {
-	err := st.ValidateEvent(event)
-	if err != nil {
-		return err
-	}
-
 	st.mu.Lock()
 	defer st.mu.Unlock()
 	_, ok := st.events[eventID]
@@ -54,6 +45,8 @@ func (st *Storage) DeleteEvent(ctx context.Context, eventID string) error {
 }
 
 func (st *Storage) getEventsByPeriod(start, end time.Time) ([]storage.Event, error) {
+	st.mu.Lock()
+	defer st.mu.Unlock()
 	res := make([]storage.Event, 0, len(st.events))
 	for _, e := range st.events {
 		if e.Date.After(start) && e.EndDate.Before(end) {
@@ -73,10 +66,6 @@ func (st *Storage) GetWeeklyEvents(ctx context.Context, date time.Time) ([]stora
 
 func (st *Storage) GetMonthlyEvents(ctx context.Context, date time.Time) ([]storage.Event, error) {
 	return st.getEventsByPeriod(date, date.AddDate(0, 1, 0))
-}
-
-func (st *Storage) ValidateEvent(event storage.Event) error {
-	return storage.ValidateEvent(event)
 }
 
 func New() *Storage {

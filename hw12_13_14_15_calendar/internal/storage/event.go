@@ -33,8 +33,35 @@ type EventUseCase struct {
 	storage Storage
 }
 
+func (u *EventUseCase) validateEvent(e Event) error {
+	switch {
+	case e.Title == "":
+		return ErrEventTitle
+	case e.EndDate.IsZero():
+		return ErrEventEndDate
+	case e.Date.IsZero():
+		return ErrEventDate
+	case !e.RemindDate.IsZero() && (!e.RemindDate.After(e.Date) || !e.RemindDate.Before(e.EndDate)):
+		return ErrNotValidRemindDate
+	}
+
+	if e.Date.After(e.EndDate) {
+		return ErrNotValidEventDate
+	}
+
+	if _, err := uuid.Parse(e.UserID); err != nil {
+		return ErrEventUserID
+	}
+
+	return nil
+}
+
 func (u *EventUseCase) Create(ctx context.Context, event Event) error {
-	err := u.storage.CreateEvent(ctx, event)
+	err := u.validateEvent(event)
+	if err != nil {
+		return fmt.Errorf("EventUseCase - CreateEvent - u.storage.CreateEvent: %w", err)
+	}
+	err = u.storage.CreateEvent(ctx, event)
 	if err != nil {
 		return fmt.Errorf("EventUseCase - CreateEvent - u.storage.CreateEvent: %w", err)
 	}
@@ -42,7 +69,11 @@ func (u *EventUseCase) Create(ctx context.Context, event Event) error {
 }
 
 func (u *EventUseCase) Update(ctx context.Context, eventID string, event Event) error {
-	err := u.storage.UpdateEvent(ctx, eventID, event)
+	err := u.validateEvent(event)
+	if err != nil {
+		return fmt.Errorf("EventUseCase - UpdateEvent - u.storage.UpdateEvent: %w", err)
+	}
+	err = u.storage.UpdateEvent(ctx, eventID, event)
 	if err != nil {
 		return fmt.Errorf("EventUseCase - UpdateEvent - u.storage.UpdateEvent: %w", err)
 	}
@@ -85,27 +116,4 @@ func New(st Storage) *EventUseCase {
 	return &EventUseCase{
 		storage: st,
 	}
-}
-
-func ValidateEvent(e Event) error {
-	switch {
-	case e.Title == "":
-		return ErrEventTitle
-	case e.EndDate.IsZero():
-		return ErrEventEndDate
-	case e.Date.IsZero():
-		return ErrEventDate
-	case !e.RemindDate.IsZero() && (!e.RemindDate.After(e.Date) || !e.RemindDate.Before(e.EndDate)):
-		return ErrNotValidRemindDate
-	}
-
-	if e.Date.After(e.EndDate) {
-		return ErrNotValidEventDate
-	}
-
-	if _, err := uuid.Parse(e.UserID); err != nil {
-		return ErrEventUserID
-	}
-
-	return nil
 }

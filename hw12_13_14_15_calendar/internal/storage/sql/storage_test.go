@@ -104,30 +104,6 @@ func TestStorage(t *testing.T) {
 			},
 		},
 		{
-			Name:  "invalid title",
-			Event: storage.Event{UserID: uuid.New().String(), Date: time.Now(), EndDate: time.Now().Add(4 * time.Hour)},
-			Action: func(ctx context.Context, st *Storage, event storage.Event, db *sqlx.DB) error {
-				return st.CreateEvent(context.Background(), event)
-			},
-			Err: storage.ErrEventTitle,
-		},
-		{
-			Name:  "invalid end date",
-			Event: storage.Event{Title: "some event 1", UserID: uuid.New().String(), Date: time.Now()},
-			Action: func(ctx context.Context, st *Storage, event storage.Event, db *sqlx.DB) error {
-				return st.CreateEvent(context.Background(), event)
-			},
-			Err: storage.ErrEventEndDate,
-		},
-		{
-			Name:  "invalid date",
-			Event: storage.Event{Title: "some event 1", UserID: uuid.New().String(), EndDate: time.Now().Add(22 * time.Hour)},
-			Action: func(ctx context.Context, st *Storage, event storage.Event, db *sqlx.DB) error {
-				return st.CreateEvent(context.Background(), event)
-			},
-			Err: storage.ErrEventDate,
-		},
-		{
 			Name: "some get check",
 			Action: func(ctx context.Context, st *Storage, event storage.Event, db *sqlx.DB) error {
 				if _, err := db.Exec(query); err != nil {

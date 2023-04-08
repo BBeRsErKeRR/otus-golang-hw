@@ -23,5 +23,4 @@ type Storage interface {
 	GetDailyEvents(context.Context, time.Time) ([]Event, error)
 	GetWeeklyEvents(context.Context, time.Time) ([]Event, error)
 	GetMonthlyEvents(context.Context, time.Time) ([]Event, error)
-	ValidateEvent(Event) error
 }

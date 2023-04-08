@@ -82,12 +82,8 @@ INSERT INTO events(id, title, date, end_date, description, user_id, remind_date)
 `
 
 func (st *Storage) CreateEvent(ctx context.Context, event storage.Event) error {
-	err := st.ValidateEvent(event)
-	if err != nil {
-		return err
-	}
 	event.ID = uuid.New().String()
-	_, err = st.execNamedQuery(ctx, createEventQ, event)
+	_, err := st.execNamedQuery(ctx, createEventQ, event)
 	return err
 }
 
@@ -103,10 +99,6 @@ UPDATE events
 `
 
 func (st *Storage) UpdateEvent(ctx context.Context, eventID string, event storage.Event) error {
-	err := st.ValidateEvent(event)
-	if err != nil {
-		return err
-	}
 	event.ID = eventID
 
 	res, err := st.execNamedQuery(ctx, updateEventQ, event)
@@ -158,8 +150,4 @@ func (st *Storage) GetWeeklyEvents(ctx context.Context, date time.Time) ([]stora
 
 func (st *Storage) GetMonthlyEvents(ctx context.Context, date time.Time) ([]storage.Event, error) {
 	return st.getEventsByPeriod(ctx, date, date.AddDate(0, 1, 0))
-}
-
-func (st *Storage) ValidateEvent(event storage.Event) error {
-	return storage.ValidateEvent(event)
 }

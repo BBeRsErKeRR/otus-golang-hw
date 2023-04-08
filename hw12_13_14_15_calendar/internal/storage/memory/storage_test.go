@@ -71,42 +71,6 @@ func TestStorage(t *testing.T) {
 				return nil
 			},
 		},
-		{
-			Name: "invalid title",
-			Event: storage.Event{
-				UserID:  uuid.New().String(),
-				Date:    time.Now(),
-				EndDate: time.Now().Add(4 * time.Hour),
-			},
-			Action: func(ctx context.Context, st *Storage, event storage.Event) error {
-				return st.CreateEvent(context.Background(), event)
-			},
-			Err: storage.ErrEventTitle,
-		},
-		{
-			Name: "invalid duration",
-			Event: storage.Event{
-				Title:  "some event 1",
-				UserID: uuid.New().String(),
-				Date:   time.Now(),
-			},
-			Action: func(ctx context.Context, st *Storage, event storage.Event) error {
-				return st.CreateEvent(context.Background(), event)
-			},
-			Err: storage.ErrEventEndDate,
-		},
-		{
-			Name: "invalid date",
-			Event: storage.Event{
-				Title:   "some event 1",
-				UserID:  uuid.New().String(),
-				EndDate: time.Now().Add(4 * time.Hour),
-			},
-			Action: func(ctx context.Context, st *Storage, event storage.Event) error {
-				return st.CreateEvent(context.Background(), event)
-			},
-			Err: storage.ErrEventDate,
-		},
 	}
 
 	for _, testcase := range testcases {
