@@ -15,6 +15,9 @@ help: ## Display this help
 	echo $$line | awk 'BEGIN {FS = ":.*?## "}; {printf "\033[36m%-30s\033[0m %s\n", $$1, $$2}'; fi; \
 	done; unset IFS;
 
+generate: ## Generate proto files
+	go $@ ./...
+
 build: ## Build application
 	go build -v -o $(BIN) -ldflags "$(LDFLAGS)" ./cmd/calendar
 
