@@ -8,6 +8,7 @@ import (
 
 	"github.com/BBeRsErKeRR/otus-golang-hw/hw12_13_14_15_calendar/internal/app"
 	"github.com/BBeRsErKeRR/otus-golang-hw/hw12_13_14_15_calendar/internal/logger"
+	internalgrpc "github.com/BBeRsErKeRR/otus-golang-hw/hw12_13_14_15_calendar/internal/server/grpc"
 	internalhttp "github.com/BBeRsErKeRR/otus-golang-hw/hw12_13_14_15_calendar/internal/server/http"
 	"github.com/spf13/cobra"
 )
@@ -34,17 +35,22 @@ var rootCmd = &cobra.Command{
 
 		storage := app.GetEventUseCase(config.App.Database)
 		calendar := app.New(logg, storage)
-
 		server := internalhttp.NewServer(logg, calendar, config.App.HTTPServer)
+		grpc := internalgrpc.NewServer(logg, calendar, config.App.GRPCServer)
 
 		go func() {
 			if err := server.Start(ctx); err != nil {
 				logg.Error("failed to start http server: " + err.Error())
 				cancel()
 			}
+			if err := grpc.Start(); err != nil {
+				logg.Error("failed to start grpc server: " + err.Error())
+				cancel()
+			}
 		}()
 
 		defer server.Stop()
+		defer grpc.Stop()
 
 		<-ctx.Done()
 	},

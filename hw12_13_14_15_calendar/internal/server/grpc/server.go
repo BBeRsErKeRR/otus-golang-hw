@@ -1,12 +1,10 @@
 package internalgrpc
 
 import (
-	"context"
 	"log"
 	"net"
 
 	router "github.com/BBeRsErKeRR/otus-golang-hw/hw12_13_14_15_calendar/api"
-	event "github.com/BBeRsErKeRR/otus-golang-hw/hw12_13_14_15_calendar/api/v1/grpc"
 	v1grpc "github.com/BBeRsErKeRR/otus-golang-hw/hw12_13_14_15_calendar/api/v1/grpc"
 	"github.com/BBeRsErKeRR/otus-golang-hw/hw12_13_14_15_calendar/internal/logger"
 	"github.com/BBeRsErKeRR/otus-golang-hw/hw12_13_14_15_calendar/internal/server"
@@ -35,7 +33,7 @@ func NewServer(logger logger.Logger, app router.Application, conf *Config) *Serv
 			loggingMiddleware(logger),
 		),
 	)
-	event.RegisterEventServiceServer(server, v1grpc.NewHandler(app, logger))
+	v1grpc.RegisterEventServiceServer(server, v1grpc.NewHandler(app, logger))
 	return &Server{
 		Addr:   addr,
 		logger: logger,
@@ -43,7 +41,7 @@ func NewServer(logger logger.Logger, app router.Application, conf *Config) *Serv
 	}
 }
 
-func (s *Server) Start(ctx context.Context) error {
+func (s *Server) Start() error {
 	list, err := net.Listen("tcp", s.Addr)
 	if err != nil {
 		return err

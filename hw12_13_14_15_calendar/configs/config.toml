@@ -10,6 +10,10 @@ read_timeout = "200ms"
 write_timeout = "200ms"
 read_header_timeout = "200ms"
 
+[app.grpc_server]
+host = "localhost"
+port = "5080"
+
 [app.database]
 storage = "sql"
 driver = "postgres"

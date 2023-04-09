@@ -1,7 +1,6 @@
 package v1routes
 
 import (
-	"encoding/json"
 	"fmt"
 	"io/ioutil"
 	"net/http"
@@ -10,9 +9,15 @@ import (
 	router "github.com/BBeRsErKeRR/otus-golang-hw/hw12_13_14_15_calendar/api"
 	"github.com/BBeRsErKeRR/otus-golang-hw/hw12_13_14_15_calendar/internal/logger"
 	"github.com/BBeRsErKeRR/otus-golang-hw/hw12_13_14_15_calendar/internal/storage"
+	"github.com/goccy/go-json"
 	"github.com/gorilla/mux"
 	"go.uber.org/zap"
 )
+
+type UpdateRequest struct {
+	ID    string   `json:"title"`
+	Event EventDTO `json:"event"`
+}
 
 type EventDTO struct {
 	Title      string    `json:"title"`
@@ -52,17 +57,22 @@ func (h *Handler) AddV1Routes(r *mux.Router) {
 }
 
 func (h *Handler) addRoutes(r *mux.Router) {
-	r.HandleFunc("/hello", h.helloWorld)
-	r.HandleFunc("/create", h.CreateEvent)
+	r.HandleFunc("/hello", h.helloWorld).Methods("GET")
+	r.HandleFunc("/event", h.CreateEvent).Methods("POST")
+	r.HandleFunc("/event", h.UpdateEvent).Methods("PUT")
+	r.HandleFunc("/event", h.DeleteEvent).Methods("DELETE")
+	r.HandleFunc("/events/daily", h.GetDailyEvents).Methods("GET", "POST")
+	r.HandleFunc("/events/weekly", h.GetMonthlyEvents).Methods("GET", "POST")
+	r.HandleFunc("/events/monthly", h.GetWeeklyEvents).Methods("GET", "POST")
 }
 
 func (h *Handler) sendResponse(data string, status int, w http.ResponseWriter) {
+	w.WriteHeader(status)
 	w.Header().Add("Content-Type", "application/json")
 	if _, err := w.Write([]byte(data)); err != nil {
 		status = http.StatusInternalServerError
 		h.logger.Error("error send data to client", zap.Error(err))
 	}
-	w.WriteHeader(status)
 }
 
 func (h *Handler) notFound(w http.ResponseWriter, r *http.Request) {
@@ -90,7 +100,19 @@ func (h *Handler) CreateEvent(w http.ResponseWriter, r *http.Request) {
 }
 
 func (h *Handler) UpdateEvent(w http.ResponseWriter, r *http.Request) {
-	h.sendResponse(`{"msg":"Hello, world!"}"`, http.StatusOK, w)
+	reqBody, err := ioutil.ReadAll(r.Body)
+	if err != nil {
+		h.sendResponse(fmt.Sprintf(`{"error":"%v"}"`, err), http.StatusBadRequest, w)
+		return
+	}
+	var data UpdateRequest
+	json.Unmarshal(reqBody, &data)
+	err = h.app.UpdateEvent(r.Context(), data.ID, data.Event.transfer())
+	if err != nil {
+		h.sendResponse(fmt.Sprintf(`{"error":"%v"}"`, err), http.StatusBadRequest, w)
+		return
+	}
+	h.sendResponse(`{"msg":"Updated"}`, http.StatusOK, w)
 }
 
 func (h *Handler) DeleteEvent(w http.ResponseWriter, r *http.Request) {
