@@ -34,21 +34,30 @@ var rootCmd = &cobra.Command{
 		}
 
 		storage := app.GetEventUseCase(config.App.Database)
+		err = storage.Connect(ctx)
+		if err != nil {
+			logg.Error("Error create db connection: " + err.Error())
+			return
+		}
 		calendar := app.New(logg, storage)
 		server := internalhttp.NewServer(logg, calendar, config.App.HTTPServer)
 		grpc := internalgrpc.NewServer(logg, calendar, config.App.GRPCServer)
 
 		go func() {
-			if err := server.Start(ctx); err != nil {
-				logg.Error("failed to start http server: " + err.Error())
-				cancel()
-			}
 			if err := grpc.Start(); err != nil {
 				logg.Error("failed to start grpc server: " + err.Error())
 				cancel()
 			}
 		}()
 
+		go func() {
+			if err := server.Start(ctx); err != nil {
+				logg.Error("failed to start http server: " + err.Error())
+				cancel()
+			}
+		}()
+
+		defer storage.Close(ctx)
 		defer server.Stop()
 		defer grpc.Stop()
 

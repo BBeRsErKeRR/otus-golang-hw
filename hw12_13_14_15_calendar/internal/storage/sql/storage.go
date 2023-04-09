@@ -25,6 +25,7 @@ type Storage struct {
 
 func (st *Storage) Connect(ctx context.Context) error {
 	var err error
+	fmt.Println(st.dataSourceName)
 	st.db, err = sqlx.ConnectContext(ctx, "pgx", st.dataSourceName)
 	if err != nil {
 		return err

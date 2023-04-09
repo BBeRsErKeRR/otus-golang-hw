@@ -112,6 +112,22 @@ func (u *EventUseCase) GetMonthlyEvents(ctx context.Context, date time.Time) ([]
 	return events, nil
 }
 
+func (u *EventUseCase) Connect(ctx context.Context) error {
+	err := u.storage.Connect(ctx)
+	if err != nil {
+		return fmt.Errorf("EventUseCase - Connect - u.storage.Connect: %w", err)
+	}
+	return nil
+}
+
+func (u *EventUseCase) Close(ctx context.Context) error {
+	err := u.storage.Close(ctx)
+	if err != nil {
+		return fmt.Errorf("EventUseCase - Connect - u.storage.Close: %w", err)
+	}
+	return nil
+}
+
 func New(st Storage) *EventUseCase {
 	return &EventUseCase{
 		storage: st,

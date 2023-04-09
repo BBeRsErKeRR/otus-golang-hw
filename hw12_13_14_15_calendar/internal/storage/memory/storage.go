@@ -68,6 +68,14 @@ func (st *Storage) GetMonthlyEvents(ctx context.Context, date time.Time) ([]stor
 	return st.getEventsByPeriod(date, date.AddDate(0, 1, 0))
 }
 
+func (st *Storage) Connect(ctx context.Context) error {
+	return nil
+}
+
+func (st *Storage) Close(ctx context.Context) error {
+	return nil
+}
+
 func New() *Storage {
 	return &Storage{
 		events: map[string]storage.Event{},

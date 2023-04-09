@@ -22,7 +22,7 @@ build: ## Build application
 	go build -v -o $(BIN) -ldflags "$(LDFLAGS)" ./cmd/calendar
 
 run: build ## Run calendar app
-	$(BIN) --config ./configs/config.toml
+	source make/.env && $(BIN) --config ./configs/config.toml
 
 version: build  ## Project version
 	$(BIN) version

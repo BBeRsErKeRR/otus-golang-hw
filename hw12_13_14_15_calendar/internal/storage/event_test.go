@@ -36,6 +36,14 @@ func (ts *tStorage) GetMonthlyEvents(ctx context.Context, date time.Time) ([]Eve
 	return []Event{}, nil
 }
 
+func (ts *tStorage) Connect(ctx context.Context) error {
+	return nil
+}
+
+func (ts *tStorage) Close(ctx context.Context) error {
+	return nil
+}
+
 func TestStorage(t *testing.T) {
 	ctx := context.Background()
 	testcases := []struct {
