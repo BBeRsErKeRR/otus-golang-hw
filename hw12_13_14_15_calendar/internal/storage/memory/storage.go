@@ -17,6 +17,11 @@ type Storage struct {
 func (st *Storage) CreateEvent(ctx context.Context, event storage.Event) error {
 	st.mu.Lock()
 	defer st.mu.Unlock()
+	for _, e := range st.events {
+		if e.Date.Equal(event.Date) && e.EndDate.Equal(event.EndDate) && e.Title == event.Title {
+			return storage.ErrDuplicateEvent
+		}
+	}
 	event.ID = uuid.New().String()
 	st.events[event.ID] = event
 	return nil

@@ -17,6 +17,7 @@ var (
 	ErrNotExist           = errors.New("event not exist")
 	ErrNotValidRemindDate = errors.New("remind date invalid")
 	ErrNotValidEventDate  = errors.New("date is more then end date")
+	ErrDuplicateEvent     = errors.New("duplicate event error")
 )
 
 type Event struct {

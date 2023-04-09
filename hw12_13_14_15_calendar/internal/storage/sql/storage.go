@@ -9,7 +9,9 @@ import (
 
 	"github.com/BBeRsErKeRR/otus-golang-hw/hw12_13_14_15_calendar/internal/storage"
 	"github.com/google/uuid"
-	_ "github.com/jackc/pgx/stdlib" //nolint:blank-imports
+	"github.com/jackc/pgerrcode"
+	"github.com/jackc/pgx/v5/pgconn"
+	_ "github.com/jackc/pgx/v5/stdlib" //nolint:blank-imports
 	"github.com/jmoiron/sqlx"
 )
 
@@ -85,7 +87,14 @@ INSERT INTO events(id, title, date, end_date, description, user_id, remind_date)
 func (st *Storage) CreateEvent(ctx context.Context, event storage.Event) error {
 	event.ID = uuid.New().String()
 	_, err := st.execNamedQuery(ctx, createEventQ, event)
-	return err
+	if err != nil {
+		var pgErr *pgconn.PgError
+		if errors.As(err, &pgErr) && pgErr.Code == pgerrcode.UniqueViolation {
+			return storage.ErrDuplicateEvent
+		}
+		return err
+	}
+	return nil
 }
 
 const updateEventQ = `

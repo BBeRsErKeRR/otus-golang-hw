@@ -134,6 +134,29 @@ func TestStorage(t *testing.T) {
 				return nil
 			},
 		},
+		{
+			Name: "check duplicate error",
+			Event: storage.Event{
+				Title:      "some event 1",
+				Desc:       "this is the test event 1",
+				UserID:     uuid.New().String(),
+				Date:       time.Now(),
+				EndDate:    time.Now().Add(4 * time.Hour),
+				RemindDate: time.Now().Add(3 * time.Hour),
+			},
+			Err: storage.ErrDuplicateEvent,
+			Action: func(ctx context.Context, st *Storage, event storage.Event, db *sqlx.DB) error {
+				err := st.CreateEvent(ctx, event)
+				if err != nil {
+					return err
+				}
+				err = st.CreateEvent(ctx, event)
+				if err != nil {
+					return err
+				}
+				return nil
+			},
+		},
 	}
 
 	for _, testcase := range testcases {
