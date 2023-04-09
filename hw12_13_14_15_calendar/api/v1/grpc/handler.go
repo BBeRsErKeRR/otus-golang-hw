@@ -25,14 +25,21 @@ func NewHandler(app router.Application, logger logger.Logger) *Handler {
 }
 
 func (h *Handler) getStorageEvent(event *Event) storage.Event {
-	return storage.Event{
-		Title:      event.GetTitle(),
-		Date:       event.GetDate().AsTime(),
-		EndDate:    event.GetEndDate().AsTime(),
-		Desc:       event.GetDesc(),
-		UserID:     event.GetUserID(),
-		RemindDate: event.GetRemindDate().AsTime(),
+	newEvent := storage.Event{
+		Title:  event.GetTitle(),
+		Desc:   event.GetDesc(),
+		UserID: event.GetUserID(),
 	}
+	if event.GetDate() != nil {
+		newEvent.Date = event.GetDate().AsTime()
+	}
+	if event.GetEndDate() != nil {
+		newEvent.EndDate = event.GetEndDate().AsTime()
+	}
+	if event.GetRemindDate() != nil {
+		newEvent.RemindDate = event.GetRemindDate().AsTime()
+	}
+	return newEvent
 }
 
 func (h *Handler) getRequestEvents(events []storage.Event) []*Event {
