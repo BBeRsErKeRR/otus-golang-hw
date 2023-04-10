@@ -33,7 +33,7 @@ func TestStorage(t *testing.T) {
 				RemindDate: time.Now().Add(3 * time.Hour),
 			},
 			Action: func(ctx context.Context, st *Storage, event storage.Event) error {
-				err := st.CreateEvent(ctx, event)
+				_, err := st.CreateEvent(ctx, event)
 				if err != nil {
 					return err
 				}
@@ -83,11 +83,15 @@ func TestStorage(t *testing.T) {
 			},
 			Err: storage.ErrDuplicateEvent,
 			Action: func(ctx context.Context, st *Storage, event storage.Event) error {
-				err := st.CreateEvent(ctx, event)
+				id, err := st.CreateEvent(ctx, event)
 				if err != nil {
 					return err
 				}
-				err = st.CreateEvent(ctx, event)
+				_, err = st.GetEvent(ctx, id)
+				if err != nil {
+					return err
+				}
+				_, err = st.CreateEvent(ctx, event)
 				if err != nil {
 					return err
 				}

@@ -22,17 +22,17 @@ func New(logger logger.Logger, u storage.EventUseCase) *App {
 	}
 }
 
-func (a *App) CreateEvent(ctx context.Context, event storage.Event) error {
+func (a *App) CreateEvent(ctx context.Context, event storage.Event) (string, error) {
 	a.logger.Info("create")
 	return a.u.Create(ctx, event)
 }
 
-func (a *App) UpdateEvent(ctx context.Context, eventId string, event storage.Event) error {
-	return a.u.Update(ctx, eventId, event)
+func (a *App) UpdateEvent(ctx context.Context, eventID string, event storage.Event) error {
+	return a.u.Update(ctx, eventID, event)
 }
 
-func (a *App) DeleteEvent(ctx context.Context, eventId string) error {
-	return a.u.Delete(ctx, eventId)
+func (a *App) DeleteEvent(ctx context.Context, eventID string) error {
+	return a.u.Delete(ctx, eventID)
 }
 
 func (a *App) GetDailyEvents(ctx context.Context, date time.Time) ([]storage.Event, error) {

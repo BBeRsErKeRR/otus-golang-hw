@@ -17,7 +17,8 @@ type Config struct {
 }
 
 type Storage interface {
-	CreateEvent(context.Context, Event) error
+	GetEvent(context.Context, string) (Event, error)
+	CreateEvent(context.Context, Event) (string, error)
 	UpdateEvent(context.Context, string, Event) error
 	DeleteEvent(context.Context, string) error
 	GetDailyEvents(context.Context, time.Time) ([]Event, error)

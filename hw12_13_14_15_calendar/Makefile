@@ -28,7 +28,7 @@ version: build  ## Project version
 	$(BIN) version
 
 test: ## Execute tests
-	go test -race ./internal/...
+	go test -race ./internal/... ./api/...
 
 wait-for-db:
 	sleep 5

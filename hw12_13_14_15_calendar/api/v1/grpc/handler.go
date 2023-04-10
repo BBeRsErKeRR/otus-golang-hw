@@ -44,7 +44,7 @@ func (h *Handler) getStorageEvent(event *Event) storage.Event {
 
 func (h *Handler) getRequestEvents(events []storage.Event) []*Event {
 	res := make([]*Event, len(events))
-	for _, el := range events {
+	for i, el := range events {
 		event := Event{
 			ID:         el.ID,
 			Title:      el.Title,
@@ -54,34 +54,34 @@ func (h *Handler) getRequestEvents(events []storage.Event) []*Event {
 			UserID:     el.UserID,
 			RemindDate: timestamppb.New(el.RemindDate),
 		}
-		res = append(res, &event)
+		res[i] = &event
 	}
 	return res
 }
 
-func (h *Handler) CreateEvent(ctx context.Context, event *Event) (*Response, error) {
-	err := h.app.CreateEvent(ctx, h.getStorageEvent(event))
+func (h *Handler) CreateEvent(ctx context.Context, event *Event) (*EventIDResponse, error) {
+	id, err := h.app.CreateEvent(ctx, h.getStorageEvent(event))
 	if err != nil {
-		return &Response{Status: "error"}, err
+		return &EventIDResponse{Msg: "error"}, err
 	}
-	return &Response{Status: "success"}, nil
+	return &EventIDResponse{Msg: "Created", Id: id}, nil
 }
 
 func (h *Handler) UpdateEvent(ctx context.Context, req *UpdateRequest) (*Response, error) {
 	err := h.app.UpdateEvent(ctx, req.Id, h.getStorageEvent(req.Event))
 	if err != nil {
-		return &Response{Status: "error"}, err
+		return &Response{Msg: "error"}, err
 	}
-	return &Response{Status: "success"}, nil
+	return &Response{Msg: "success"}, nil
 }
 
 func (h *Handler) DeleteEvent(ctx context.Context, req *EventID) (*Response, error) {
 	h.logger.Info("DeleteEvent", zap.String("eventID", req.Id))
 	err := h.app.DeleteEvent(ctx, req.Id)
 	if err != nil {
-		return &Response{Status: "error"}, err
+		return &Response{Msg: "error"}, err
 	}
-	return &Response{Status: "success"}, nil
+	return &Response{Msg: "success"}, nil
 }
 
 func (h *Handler) GetDailyEvents(ctx context.Context, req *EventsRequest) (*EventsResponse, error) {

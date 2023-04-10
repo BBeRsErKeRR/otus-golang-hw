@@ -8,7 +8,7 @@ import (
 )
 
 type Application interface {
-	CreateEvent(context.Context, storage.Event) error
+	CreateEvent(context.Context, storage.Event) (string, error)
 	UpdateEvent(context.Context, string, storage.Event) error
 	DeleteEvent(context.Context, string) error
 	GetDailyEvents(context.Context, time.Time) ([]storage.Event, error)

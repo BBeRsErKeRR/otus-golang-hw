@@ -3,7 +3,6 @@ package server
 import (
 	"errors"
 	"net"
-
 	"regexp"
 	"strconv"
 )

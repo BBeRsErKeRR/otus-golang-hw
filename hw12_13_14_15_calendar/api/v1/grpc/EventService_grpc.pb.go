@@ -33,7 +33,7 @@ const (
 // For semantics around ctx use and closing/ending streaming RPCs, please refer to https://pkg.go.dev/google.golang.org/grpc/?tab=doc#ClientConn.NewStream.
 type EventServiceClient interface {
 	Get(ctx context.Context, in *EventID, opts ...grpc.CallOption) (*EventResponse, error)
-	CreateEvent(ctx context.Context, in *Event, opts ...grpc.CallOption) (*Response, error)
+	CreateEvent(ctx context.Context, in *Event, opts ...grpc.CallOption) (*EventIDResponse, error)
 	UpdateEvent(ctx context.Context, in *UpdateRequest, opts ...grpc.CallOption) (*Response, error)
 	DeleteEvent(ctx context.Context, in *EventID, opts ...grpc.CallOption) (*Response, error)
 	GetDailyEvents(ctx context.Context, in *EventsRequest, opts ...grpc.CallOption) (*EventsResponse, error)
@@ -58,8 +58,8 @@ func (c *eventServiceClient) Get(ctx context.Context, in *EventID, opts ...grpc.
 	return out, nil
 }
 
-func (c *eventServiceClient) CreateEvent(ctx context.Context, in *Event, opts ...grpc.CallOption) (*Response, error) {
-	out := new(Response)
+func (c *eventServiceClient) CreateEvent(ctx context.Context, in *Event, opts ...grpc.CallOption) (*EventIDResponse, error) {
+	out := new(EventIDResponse)
 	err := c.cc.Invoke(ctx, EventService_CreateEvent_FullMethodName, in, out, opts...)
 	if err != nil {
 		return nil, err
@@ -117,7 +117,7 @@ func (c *eventServiceClient) GetMonthlyEvents(ctx context.Context, in *EventsReq
 // for forward compatibility
 type EventServiceServer interface {
 	Get(context.Context, *EventID) (*EventResponse, error)
-	CreateEvent(context.Context, *Event) (*Response, error)
+	CreateEvent(context.Context, *Event) (*EventIDResponse, error)
 	UpdateEvent(context.Context, *UpdateRequest) (*Response, error)
 	DeleteEvent(context.Context, *EventID) (*Response, error)
 	GetDailyEvents(context.Context, *EventsRequest) (*EventsResponse, error)
@@ -133,7 +133,7 @@ type UnimplementedEventServiceServer struct {
 func (UnimplementedEventServiceServer) Get(context.Context, *EventID) (*EventResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method Get not implemented")
 }
-func (UnimplementedEventServiceServer) CreateEvent(context.Context, *Event) (*Response, error) {
+func (UnimplementedEventServiceServer) CreateEvent(context.Context, *Event) (*EventIDResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method CreateEvent not implemented")
 }
 func (UnimplementedEventServiceServer) UpdateEvent(context.Context, *UpdateRequest) (*Response, error) {

@@ -57,20 +57,50 @@ func (u *EventUseCase) validateEvent(e Event) error {
 	return nil
 }
 
-func (u *EventUseCase) Create(ctx context.Context, event Event) error {
+func (u *EventUseCase) getAndUpdateEventValue(ctx context.Context, eventID string, modifyEvent Event) (Event, error) {
+	event, err := u.storage.GetEvent(ctx, eventID)
+	if err != nil {
+		return Event{}, err
+	}
+	if modifyEvent.Title != "" {
+		event.Title = modifyEvent.Title
+	}
+	if !modifyEvent.Date.IsZero() {
+		event.Date = modifyEvent.Date
+	}
+	if !modifyEvent.EndDate.IsZero() {
+		event.EndDate = modifyEvent.EndDate
+	}
+	if !modifyEvent.RemindDate.IsZero() {
+		event.RemindDate = modifyEvent.RemindDate
+	}
+	if modifyEvent.Desc != "" {
+		event.Desc = modifyEvent.Desc
+	}
+	if modifyEvent.UserID != "" {
+		event.UserID = modifyEvent.UserID
+	}
+	return event, nil
+}
+
+func (u *EventUseCase) Create(ctx context.Context, event Event) (string, error) {
 	err := u.validateEvent(event)
 	if err != nil {
-		return fmt.Errorf("EventUseCase - CreateEvent - u.storage.CreateEvent: %w", err)
+		return "", fmt.Errorf("EventUseCase - CreateEvent - u.storage.CreateEvent: %w", err)
 	}
-	err = u.storage.CreateEvent(ctx, event)
+	res, err := u.storage.CreateEvent(ctx, event)
 	if err != nil {
-		return fmt.Errorf("EventUseCase - CreateEvent - u.storage.CreateEvent: %w", err)
+		return "", fmt.Errorf("EventUseCase - CreateEvent - u.storage.CreateEvent: %w", err)
 	}
-	return nil
+	return res, nil
 }
 
 func (u *EventUseCase) Update(ctx context.Context, eventID string, event Event) error {
-	err := u.validateEvent(event)
+	mEvent, err := u.getAndUpdateEventValue(ctx, eventID, event)
+	if err != nil {
+		return fmt.Errorf("EventUseCase - UpdateEvent - u.storage.UpdateEvent: %w", err)
+	}
+	err = u.validateEvent(mEvent)
 	if err != nil {
 		return fmt.Errorf("EventUseCase - UpdateEvent - u.storage.UpdateEvent: %w", err)
 	}
