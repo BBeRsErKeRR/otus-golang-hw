@@ -5,7 +5,7 @@
 
 BIN := "./bin/calendar"
 
-help: SHELL:=/bin/bash
+help: SHELL=/bin/bash
 help: ## Display this help
 	@IFS=$$'\n'; for line in `grep -h -E '^[a-zA-Z_#-]+:?.*?## .*$$' $(MAKEFILE_LIST)`; do if [ "$${line:0:2}" = "##" ]; then \
 	echo $$line | awk 'BEGIN {FS = "## "}; {printf "\n\033[33m%s\033[0m\n", $$2}'; else \
@@ -42,7 +42,9 @@ install-lint-deps:
 	(which golangci-lint > /dev/null) || curl -sSfL https://raw.githubusercontent.com/golangci/golangci-lint/master/install.sh | sh -s -- -b $(shell go env GOPATH)/bin v1.50.1
 
 lint: install-lint-deps ## Run liniter
-	golangci-lint run ./internal/... ./api/... ./cmd/...
+	golangci-lint run --config=$$(pwd)/../.golangci.yml \
+		--skip-dirs='/opt/hostedtoolcache/go|/go/pkg/mod' \
+		--path-prefix=hw12_13_14_15_calendar ./internal/... ./api/... ./cmd/...
 
 goose:
 	@(goose --version) || go install github.com/pressly/goose/v3/cmd/goose@latest
