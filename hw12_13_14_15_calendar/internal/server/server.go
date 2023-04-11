@@ -10,13 +10,13 @@ import (
 var (
 	ErrorUnsupportedHostAddress = errors.New("invalid host address")
 	ErrorInvalidPort            = errors.New("invalid port number")
+	addrMatcher                 = regexp.MustCompile(`^((([a-z0-9][a-z0-9\-]*[a-z0-9])|[a-z0-9])\.?)+$`)
 )
 
 func GetAddress(hostArg string, portArg string) (string, error) {
 	var address string
-	re := regexp.MustCompile(`^((([a-z0-9][a-z0-9\-]*[a-z0-9])|[a-z0-9])\.?)+$`)
 
-	if hostArg != "localhost" && !re.MatchString(hostArg) && net.ParseIP(hostArg) == nil {
+	if hostArg != "localhost" && !addrMatcher.MatchString(hostArg) && net.ParseIP(hostArg) == nil {
 		return address, ErrorUnsupportedHostAddress
 	}
 

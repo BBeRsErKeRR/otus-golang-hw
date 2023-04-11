@@ -44,7 +44,7 @@ var rootCmd = &cobra.Command{
 		grpc := internalgrpc.NewServer(logg, calendar, config.App.GRPCServer)
 
 		go func() {
-			if err := grpc.Start(); err != nil {
+			if err := grpc.Start(ctx); err != nil {
 				logg.Error("failed to start grpc server: " + err.Error())
 				cancel()
 			}

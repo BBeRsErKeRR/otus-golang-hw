@@ -24,11 +24,11 @@ func NewHandler(app router.Application, logger logger.Logger) *Handler {
 	}
 }
 
-func (h *Handler) getStorageEvent(event *Event) storage.Event {
+func (h *Handler) getStorageEvent(event *EventRequestValue) storage.Event {
 	newEvent := storage.Event{
 		Title:  event.GetTitle(),
 		Desc:   event.GetDesc(),
-		UserID: event.GetUserID(),
+		UserID: event.GetUserId(),
 	}
 	if event.GetDate() != nil {
 		newEvent.Date = event.GetDate().AsTime()
@@ -42,16 +42,16 @@ func (h *Handler) getStorageEvent(event *Event) storage.Event {
 	return newEvent
 }
 
-func (h *Handler) getRequestEvents(events []storage.Event) []*Event {
-	res := make([]*Event, len(events))
+func (h *Handler) getRequestEvents(events []storage.Event) []*EventResponseValue {
+	res := make([]*EventResponseValue, len(events))
 	for i, el := range events {
-		event := Event{
-			ID:         el.ID,
+		event := EventResponseValue{
+			Id:         el.ID,
 			Title:      el.Title,
 			Date:       timestamppb.New(el.Date),
 			EndDate:    timestamppb.New(el.EndDate),
 			Desc:       el.Desc,
-			UserID:     el.UserID,
+			UserId:     el.UserID,
 			RemindDate: timestamppb.New(el.RemindDate),
 		}
 		res[i] = &event
@@ -59,7 +59,7 @@ func (h *Handler) getRequestEvents(events []storage.Event) []*Event {
 	return res
 }
 
-func (h *Handler) CreateEvent(ctx context.Context, event *Event) (*EventIDResponse, error) {
+func (h *Handler) CreateEvent(ctx context.Context, event *EventRequestValue) (*EventIDResponse, error) {
 	id, err := h.app.CreateEvent(ctx, h.getStorageEvent(event))
 	if err != nil {
 		return &EventIDResponse{Msg: "error"}, err

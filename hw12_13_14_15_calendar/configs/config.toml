@@ -15,7 +15,7 @@ host = "localhost"
 port = "5080"
 
 [app.database]
-storage = "sql"
+storage = "1sql"
 driver = "postgres"
 host = "localhost"
 port = "5532"

@@ -3,9 +3,12 @@
 
 .DEFAULT_GOAL := help
 
+SHELL=/bin/bash
+SHELLOPTS:=$(if $(SHELLOPTS),$(SHELLOPTS):)pipefail:errexit
+
 BIN := "./bin/calendar"
 
-help: SHELL=/bin/bash
+
 help: ## Display this help
 	@IFS=$$'\n'; for line in `grep -h -E '^[a-zA-Z_#-]+:?.*?## .*$$' $(MAKEFILE_LIST)`; do if [ "$${line:0:2}" = "##" ]; then \
 	echo $$line | awk 'BEGIN {FS = "## "}; {printf "\n\033[33m%s\033[0m\n", $$2}'; else \

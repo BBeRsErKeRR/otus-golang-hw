@@ -50,21 +50,21 @@ func TestV1GRPCHandlers(t *testing.T) {
 
 	t.Run("crud case", func(t *testing.T) {
 		crResp, err := client.CreateEvent(ctx,
-			&Event{
+			&EventRequestValue{
 				Title:   "Created",
 				Date:    timestamppb.Now(),
 				EndDate: timestamppb.New(time.Now().AddDate(0, 0, 1)),
-				UserID:  uuid.New().String(),
+				UserId:  uuid.New().String(),
 			})
 		require.NoError(t, err)
 		updResp, err := client.UpdateEvent(ctx,
 			&UpdateRequest{
 				Id: crResp.Id,
-				Event: &Event{
+				Event: &EventRequestValue{
 					Title:   "UPDATED",
 					Date:    timestamppb.Now(),
 					EndDate: timestamppb.New(time.Now().AddDate(0, 1, 0)),
-					UserID:  uuid.New().String(),
+					UserId:  uuid.New().String(),
 				},
 			},
 		)
@@ -86,24 +86,24 @@ func TestV1GRPCHandlers(t *testing.T) {
 
 	t.Run("get case", func(t *testing.T) {
 		startTime := time.Now().AddDate(0, 1, 0)
-		elements := []*Event{
+		elements := []*EventRequestValue{
 			{
 				Title:   "Daily",
 				Date:    timestamppb.New(startTime),
 				EndDate: timestamppb.New(startTime.AddDate(0, 0, 3)),
-				UserID:  uuid.New().String(),
+				UserId:  uuid.New().String(),
 			},
 			{
 				Title:   "Weekly",
 				Date:    timestamppb.New(startTime.AddDate(0, 0, 7)),
 				EndDate: timestamppb.New(startTime.AddDate(0, 0, 9)),
-				UserID:  uuid.New().String(),
+				UserId:  uuid.New().String(),
 			},
 			{
 				Title:   "Monthly",
 				Date:    timestamppb.New(startTime.AddDate(0, 1, 2)),
 				EndDate: timestamppb.New(startTime.AddDate(0, 1, 3)),
-				UserID:  uuid.New().String(),
+				UserId:  uuid.New().String(),
 			},
 		}
 		for _, el := range elements {

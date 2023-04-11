@@ -56,7 +56,7 @@ func NewServer(logger logger.Logger, app httprouter.Application, conf *Config) *
 func (s *Server) Start(ctx context.Context) error {
 	s.logger.Info("starting server", zap.String("address", s.server.Addr))
 	err := s.server.ListenAndServe()
-	if err != nil && errors.Is(err, http.ErrServerClosed) {
+	if err != nil && !errors.Is(err, http.ErrServerClosed) {
 		return err
 	}
 	<-ctx.Done()

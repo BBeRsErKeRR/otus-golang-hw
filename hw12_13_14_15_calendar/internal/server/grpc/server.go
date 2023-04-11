@@ -1,6 +1,7 @@
 package internalgrpc
 
 import (
+	"context"
 	"log"
 	"net"
 
@@ -41,13 +42,18 @@ func NewServer(logger logger.Logger, app router.Application, conf *Config) *Serv
 	}
 }
 
-func (s *Server) Start() error {
+func (s *Server) Start(ctx context.Context) error {
 	list, err := net.Listen("tcp", s.Addr)
 	if err != nil {
 		return err
 	}
 	s.logger.Info("starting server", zap.String("address", s.Addr))
-	return s.server.Serve(list)
+	err = s.server.Serve(list)
+	if err != nil {
+		return err
+	}
+	<-ctx.Done()
+	return nil
 }
 
 func (s *Server) Stop() error {
