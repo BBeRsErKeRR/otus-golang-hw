@@ -48,14 +48,39 @@ func TestV1GRPCHandlers(t *testing.T) {
 	require.NoError(t, err)
 	client := NewEventServiceClient(conn)
 
-	t.Run("create case", func(t *testing.T) {
-		_, err := client.CreateEvent(ctx,
+	t.Run("crud case", func(t *testing.T) {
+		crResp, err := client.CreateEvent(ctx,
 			&Event{
-				Title:   "Deleted",
+				Title:   "Created",
 				Date:    timestamppb.Now(),
 				EndDate: timestamppb.New(time.Now().AddDate(0, 0, 1)),
 				UserID:  uuid.New().String(),
 			})
 		require.NoError(t, err)
+		updResp, err := client.UpdateEvent(ctx,
+			&UpdateRequest{
+				Id: crResp.Id,
+				Event: &Event{
+					Title:   "UPDATED",
+					Date:    timestamppb.Now(),
+					EndDate: timestamppb.New(time.Now().AddDate(0, 1, 0)),
+					UserID:  uuid.New().String(),
+				},
+			},
+		)
+		require.NoError(t, err)
+		require.Equal(t, "success", updResp.Msg)
+		event, err := st.GetEvent(ctx, crResp.Id)
+		require.NoError(t, err)
+		require.Equal(t, "UPDATED", event.Title)
+		delResp, err := client.DeleteEvent(ctx,
+			&EventID{
+				Id: crResp.Id,
+			},
+		)
+		require.NoError(t, err)
+		require.Equal(t, "success", delResp.Msg)
+		_, err = st.GetEvent(ctx, crResp.Id)
+		require.ErrorIs(t, storage.ErrNotExist, err)
 	})
 }
