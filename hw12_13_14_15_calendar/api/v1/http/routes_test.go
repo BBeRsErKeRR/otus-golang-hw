@@ -34,7 +34,6 @@ func TestV1HTTPHandlers(t *testing.T) {
 	router := mux.NewRouter()
 	handler := NewHandler(application, logger)
 	handler.AddV1Routes(router)
-
 	testcases := map[string]struct {
 		URL         func(t *testing.T, app *app.App) string
 		Method      string
@@ -61,12 +60,8 @@ func TestV1HTTPHandlers(t *testing.T) {
 		},
 		"check deleteEvent": {
 			URL: func(t *testing.T, app *app.App) string { //nolint:thelper
-				event := storage.Event{
-					Title:   "Deleted",
-					Date:    time.Now(),
-					EndDate: time.Now().AddDate(0, 0, 1),
-					UserID:  uuid.New().String(),
-				}
+				date := time.Now()
+				event := storage.Event{Title: "Deleted", Date: date, EndDate: date.AddDate(0, 0, 1), UserID: uuid.New().String()}
 				id, err := app.CreateEvent(context.Background(), event)
 				require.NoError(t, err)
 				return fmt.Sprintf("/v1/event/%v", id)
@@ -82,12 +77,8 @@ func TestV1HTTPHandlers(t *testing.T) {
 		},
 		"check updateEvent": {
 			URL: func(t *testing.T, app *app.App) string { //nolint:thelper
-				event := storage.Event{
-					Title:   "Updated",
-					Date:    time.Now(),
-					EndDate: time.Now().AddDate(0, 0, 1),
-					UserID:  uuid.New().String(),
-				}
+				date := time.Now()
+				event := storage.Event{Title: "Updated", Date: date, EndDate: date.AddDate(0, 0, 1), UserID: uuid.New().String()}
 				id, err := app.CreateEvent(context.Background(), event)
 				require.NoError(t, err)
 				return fmt.Sprintf("/v1/event/%v", id)
@@ -113,12 +104,8 @@ func TestV1HTTPHandlers(t *testing.T) {
 		},
 		"check GetDaily": {
 			URL: func(t *testing.T, app *app.App) string { //nolint:thelper
-				event := storage.Event{
-					Title:   "GetDaily",
-					Date:    time.Now(),
-					EndDate: time.Now().AddDate(0, 0, 1),
-					UserID:  uuid.New().String(),
-				}
+				date := time.Now()
+				event := storage.Event{Title: "GetDaily", Date: date, EndDate: date.AddDate(0, 0, 1), UserID: uuid.New().String()}
 				_, err := app.CreateEvent(context.Background(), event)
 				require.NoError(t, err)
 				return fmt.Sprintf("/v1/events/daily?date=%v", url.QueryEscape(time.Now().Format(time.RFC3339)))
@@ -134,12 +121,8 @@ func TestV1HTTPHandlers(t *testing.T) {
 		},
 		"check GetWeekly": {
 			URL: func(t *testing.T, app *app.App) string { //nolint:thelper
-				event := storage.Event{
-					Title:   "GetWeekly",
-					Date:    time.Now().AddDate(0, 0, 7),
-					EndDate: time.Now().AddDate(0, 0, 9),
-					UserID:  uuid.New().String(),
-				}
+				date := time.Now().AddDate(0, 0, 7)
+				event := storage.Event{Title: "GetWeekly", Date: date, EndDate: date.AddDate(0, 0, 2), UserID: uuid.New().String()}
 				_, err := app.CreateEvent(context.Background(), event)
 				require.NoError(t, err)
 				return fmt.Sprintf("/v1/events/weekly?date=%v", url.QueryEscape(time.Now().AddDate(0, 0, 3).Format(time.RFC3339)))
@@ -155,12 +138,8 @@ func TestV1HTTPHandlers(t *testing.T) {
 		},
 		"check GetMonthly": {
 			URL: func(t *testing.T, app *app.App) string { //nolint:thelper
-				event := storage.Event{
-					Title:   "GetMonthly",
-					Date:    time.Now().AddDate(0, 1, 0),
-					EndDate: time.Now().AddDate(0, 1, 1),
-					UserID:  uuid.New().String(),
-				}
+				date := time.Now().AddDate(0, 1, 0)
+				event := storage.Event{Title: "GetMonthly", Date: date, EndDate: date.AddDate(0, 0, 1), UserID: uuid.New().String()}
 				_, err := app.CreateEvent(context.Background(), event)
 				require.NoError(t, err)
 				return "/v1/events/monthly"
@@ -176,7 +155,6 @@ func TestV1HTTPHandlers(t *testing.T) {
 			},
 		},
 	}
-
 	for caseName, tc := range testcases {
 		t.Run(caseName, func(t *testing.T) {
 			testServer := httptest.NewServer(http.HandlerFunc(tc.Action)) //nolint:unconvert

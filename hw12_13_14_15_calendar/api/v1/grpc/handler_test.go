@@ -133,6 +133,5 @@ func TestV1GRPCHandlers(t *testing.T) {
 		)
 		require.NoError(t, err)
 		require.Equal(t, 1, len(monthlyResp.Events))
-
 	})
 }
