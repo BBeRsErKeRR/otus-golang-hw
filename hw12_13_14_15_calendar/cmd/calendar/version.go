@@ -4,6 +4,8 @@ import (
 	"encoding/json"
 	"fmt"
 	"os"
+
+	"github.com/spf13/cobra"
 )
 
 var (
@@ -24,4 +26,12 @@ func printVersion() {
 	}); err != nil {
 		fmt.Printf("error while decode version info: %v\n", err)
 	}
+}
+
+var versionCmd = &cobra.Command{
+	Use:   "version",
+	Short: "App version",
+	Run: func(cmd *cobra.Command, args []string) {
+		printVersion()
+	},
 }
