@@ -86,7 +86,7 @@ func (h *Handler) DeleteEvent(ctx context.Context, req *EventID) (*Response, err
 
 func (h *Handler) GetDailyEvents(ctx context.Context, req *EventsRequest) (*EventsResponse, error) {
 	date := req.Date.AsTime()
-	h.logger.Info("GetDailyEvents", zap.String("datetime", date.Format(time.RFC822)))
+	h.logger.Debug("GetDailyEvents", zap.String("datetime", date.Format(time.RFC822)))
 	events, err := h.app.GetDailyEvents(ctx, date)
 	if err != nil {
 		return &EventsResponse{Error: err.Error()}, err
@@ -96,7 +96,7 @@ func (h *Handler) GetDailyEvents(ctx context.Context, req *EventsRequest) (*Even
 
 func (h *Handler) GetWeeklyEvents(ctx context.Context, req *EventsRequest) (*EventsResponse, error) {
 	date := req.Date.AsTime()
-	h.logger.Info("GetWeeklyEvents", zap.String("datetime", date.Format(time.RFC822)))
+	h.logger.Debug("GetWeeklyEvents", zap.String("datetime", date.Format(time.RFC822)))
 	events, err := h.app.GetWeeklyEvents(ctx, date)
 	if err != nil {
 		return &EventsResponse{Error: err.Error()}, err
@@ -106,7 +106,7 @@ func (h *Handler) GetWeeklyEvents(ctx context.Context, req *EventsRequest) (*Eve
 
 func (h *Handler) GetMonthlyEvents(ctx context.Context, req *EventsRequest) (*EventsResponse, error) {
 	date := req.Date.AsTime()
-	h.logger.Info("GetMonthlyEvents", zap.String("datetime", date.Format(time.RFC822)))
+	h.logger.Debug("GetMonthlyEvents", zap.String("datetime", date.Format(time.RFC822)))
 	events, err := h.app.GetMonthlyEvents(ctx, date)
 	if err != nil {
 		return &EventsResponse{Error: err.Error()}, err

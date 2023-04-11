@@ -132,6 +132,49 @@ func TestV1HTTPHandlers(t *testing.T) {
 				require.Equal(t, 1, len(data.Events), fmt.Sprintf("expected 1, found: %v", data.Events))
 			},
 		},
+		"check GetWeekly": {
+			URL: func(t *testing.T, app *app.App) string { //nolint:thelper
+				event := storage.Event{
+					Title:   "GetWeekly",
+					Date:    time.Now().AddDate(0, 0, 7),
+					EndDate: time.Now().AddDate(0, 0, 9),
+					UserID:  uuid.New().String(),
+				}
+				_, err := app.CreateEvent(context.Background(), event)
+				require.NoError(t, err)
+				return fmt.Sprintf("/v1/events/weekly?date=%v", url.QueryEscape(time.Now().AddDate(0, 0, 3).Format(time.RFC3339)))
+			},
+			Method: http.MethodGet,
+			Action: handler.GetDailyEvents,
+			CheckResult: func(t *testing.T, res *httptest.ResponseRecorder, req *http.Request, st storage.Storage) { //nolint:thelper,lll
+				var data EventsResponse
+				err := json.Unmarshal(res.Body.Bytes(), &data)
+				require.NoError(t, err)
+				require.Equal(t, 1, len(data.Events), fmt.Sprintf("expected 1, found: %v", data.Events))
+			},
+		},
+		"check GetMonthly": {
+			URL: func(t *testing.T, app *app.App) string { //nolint:thelper
+				event := storage.Event{
+					Title:   "GetMonthly",
+					Date:    time.Now().AddDate(0, 1, 0),
+					EndDate: time.Now().AddDate(0, 1, 1),
+					UserID:  uuid.New().String(),
+				}
+				_, err := app.CreateEvent(context.Background(), event)
+				require.NoError(t, err)
+				return "/v1/events/monthly"
+			},
+			Body:   fmt.Sprintf(`{"date": "%v"}`, time.Now().AddDate(0, 0, 20).Format(time.RFC3339)),
+			Method: http.MethodGet,
+			Action: handler.GetDailyEvents,
+			CheckResult: func(t *testing.T, res *httptest.ResponseRecorder, req *http.Request, st storage.Storage) { //nolint:thelper,lll
+				var data EventsResponse
+				err := json.Unmarshal(res.Body.Bytes(), &data)
+				require.NoError(t, err)
+				require.Equal(t, 1, len(data.Events), fmt.Sprintf("expected 1, found: %v", data.Events))
+			},
+		},
 	}
 
 	for caseName, tc := range testcases {

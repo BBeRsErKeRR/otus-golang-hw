@@ -22,7 +22,7 @@ func TestV1GRPCHandlers(t *testing.T) {
 	ctx := context.Background()
 	loggerConfig := logger.Config{
 		Level:    "debug",
-		OutPaths: []string{},
+		OutPaths: []string{"stdout"},
 		ErrPaths: []string{},
 	}
 	logger, err := logger.New(&loggerConfig)
@@ -82,5 +82,57 @@ func TestV1GRPCHandlers(t *testing.T) {
 		require.Equal(t, "success", delResp.Msg)
 		_, err = st.GetEvent(ctx, crResp.Id)
 		require.ErrorIs(t, storage.ErrNotExist, err)
+	})
+
+	t.Run("get case", func(t *testing.T) {
+		startTime := time.Now().AddDate(0, 1, 0)
+		elements := []*Event{
+			{
+				Title:   "Daily",
+				Date:    timestamppb.New(startTime),
+				EndDate: timestamppb.New(startTime.AddDate(0, 0, 3)),
+				UserID:  uuid.New().String(),
+			},
+			{
+				Title:   "Weekly",
+				Date:    timestamppb.New(startTime.AddDate(0, 0, 7)),
+				EndDate: timestamppb.New(startTime.AddDate(0, 0, 9)),
+				UserID:  uuid.New().String(),
+			},
+			{
+				Title:   "Monthly",
+				Date:    timestamppb.New(startTime.AddDate(0, 1, 2)),
+				EndDate: timestamppb.New(startTime.AddDate(0, 1, 3)),
+				UserID:  uuid.New().String(),
+			},
+		}
+		for _, el := range elements {
+			_, err := client.CreateEvent(ctx, el)
+			require.NoError(t, err)
+		}
+		dailyResp, err := client.GetDailyEvents(ctx,
+			&EventsRequest{
+				Date: timestamppb.New(startTime.AddDate(0, 0, 1)),
+			},
+		)
+		require.NoError(t, err)
+		require.Equal(t, 1, len(dailyResp.Events))
+
+		weeklyResp, err := client.GetWeeklyEvents(ctx,
+			&EventsRequest{
+				Date: timestamppb.New(startTime.AddDate(0, 0, 5)),
+			},
+		)
+		require.NoError(t, err)
+		require.Equal(t, 1, len(weeklyResp.Events))
+
+		monthlyResp, err := client.GetMonthlyEvents(ctx,
+			&EventsRequest{
+				Date: timestamppb.New(startTime.AddDate(0, 0, 21)),
+			},
+		)
+		require.NoError(t, err)
+		require.Equal(t, 1, len(monthlyResp.Events))
+
 	})
 }
