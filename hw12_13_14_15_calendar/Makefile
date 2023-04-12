@@ -15,17 +15,20 @@ help: ## Display this help
 	echo $$line | awk 'BEGIN {FS = ":.*?## "}; {printf "\033[36m%-30s\033[0m %s\n", $$1, $$2}'; fi; \
 	done; unset IFS;
 
+generate: ## Generate proto files
+	go $@ ./...
+
 build: ## Build application
 	go build -v -o $(BIN) -ldflags "$(LDFLAGS)" ./cmd/calendar
 
 run: build ## Run calendar app
-	$(BIN) --config ./configs/config.toml
+	source make/.env && $(BIN) --config ./configs/config.toml
 
 version: build  ## Project version
 	$(BIN) version
 
 test: ## Execute tests
-	go test -race ./internal/...
+	go test -race ./internal/... ./api/...
 
 wait-for-db:
 	sleep 5
@@ -39,10 +42,13 @@ coverage: postgres-up wait-for-db migrate ## test coverage
 	go tool cover -html coverage.out
 
 install-lint-deps:
-	(which golangci-lint > /dev/null) || curl -sSfL https://raw.githubusercontent.com/golangci/golangci-lint/master/install.sh | sh -s -- -b $(shell go env GOPATH)/bin v1.50.1
+	(which golangci-lint > /dev/null) || curl -sSfL https://raw.githubusercontent.com/golangci/golangci-lint/master/install.sh | sh -s -- -b $(shell go env GOPATH)/bin v1.51.1
 
 lint: install-lint-deps ## Run liniter
-	golangci-lint run --config=$$(pwd)/../.golangci.yml --skip-dirs='/opt/hostedtoolcache/go|/go/pkg/mod' --path-prefix=hw12_13_14_15_calendar ./...
+	golangci-lint run --config=$$(pwd)/../.golangci.yml \
+		--timeout 3m0s \
+		--skip-dirs='/opt/hostedtoolcache/go|/go/pkg/mod' \
+		--path-prefix=hw12_13_14_15_calendar ./...
 
 goose:
 	@(goose --version) || go install github.com/pressly/goose/v3/cmd/goose@latest

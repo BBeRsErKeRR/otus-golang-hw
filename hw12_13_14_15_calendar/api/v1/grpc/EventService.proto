@@ -1,0 +1,68 @@
+syntax = "proto3";
+
+package v1grpc;
+
+import "google/protobuf/timestamp.proto";
+
+option go_package = "./;v1grpc";
+
+message EventRequestValue {
+    string title = 1;
+    google.protobuf.Timestamp date = 2;
+    google.protobuf.Timestamp end_date = 3;
+    string desc = 4;
+    string user_id = 5;
+    google.protobuf.Timestamp remind_date = 6;
+}
+
+message EventResponseValue{
+    string id = 1;
+     string title = 2;
+    google.protobuf.Timestamp date = 3;
+    google.protobuf.Timestamp end_date = 4;
+    string desc = 5;
+    string user_id = 6;
+    google.protobuf.Timestamp remind_date = 7;
+}
+
+message Response {
+    string msg = 1;
+}
+
+message EventIDResponse {
+    string msg = 1;
+    string id = 2;
+}
+
+message EventID {
+    string id = 1;
+}
+
+message EventResponse {
+    EventResponseValue event = 1;
+    string error = 2;
+}
+
+message EventsResponse {
+    repeated EventResponseValue events = 1;
+    string error = 2;
+}
+
+message UpdateRequest {
+    string id = 1;
+    EventRequestValue event = 2;
+}
+
+message EventsRequest {
+    google.protobuf.Timestamp date = 1;
+}
+
+service EventService {
+    rpc Get(EventID) returns (EventResponse);
+    rpc CreateEvent(EventRequestValue) returns (EventIDResponse);
+    rpc UpdateEvent(UpdateRequest) returns (Response);
+    rpc DeleteEvent(EventID) returns (Response);
+    rpc GetDailyEvents(EventsRequest) returns (EventsResponse);
+    rpc GetWeeklyEvents(EventsRequest) returns (EventsResponse);
+    rpc GetMonthlyEvents(EventsRequest) returns (EventsResponse);
+}

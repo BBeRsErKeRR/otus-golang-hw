@@ -1,6 +1,8 @@
 package config
 
 import (
+	"strings"
+
 	"github.com/spf13/viper"
 )
 
@@ -8,6 +10,8 @@ func ReadConfigFile(pathToFile, typeFile string, configuration interface{}) (int
 	viper.SetConfigFile(pathToFile)
 	viper.SetConfigType(typeFile)
 	viper.AutomaticEnv()
+	replacer := strings.NewReplacer(".", "_")
+	viper.SetEnvKeyReplacer(replacer)
 	if err := viper.ReadInConfig(); err != nil {
 		return nil, err
 	}

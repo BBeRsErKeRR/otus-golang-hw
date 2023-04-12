@@ -14,23 +14,55 @@ type Storage struct {
 	mu     sync.RWMutex
 }
 
-func (st *Storage) CreateEvent(ctx context.Context, event storage.Event) error {
+func (st *Storage) GetEvent(ctx context.Context, eventID string) (storage.Event, error) {
 	st.mu.Lock()
 	defer st.mu.Unlock()
-	event.ID = uuid.New().String()
-	st.events[event.ID] = event
-	return nil
+	event, ok := st.events[eventID]
+	if !ok {
+		return storage.Event{}, storage.ErrNotExist
+	}
+	return event, nil
 }
 
-func (st *Storage) UpdateEvent(ctx context.Context, eventID string, event storage.Event) error {
+func (st *Storage) CreateEvent(ctx context.Context, event storage.Event) (string, error) {
 	st.mu.Lock()
 	defer st.mu.Unlock()
-	_, ok := st.events[eventID]
-	if !ok {
-		return storage.ErrNotExist
+	for _, e := range st.events {
+		if e.Date.Equal(event.Date) && e.EndDate.Equal(event.EndDate) && e.Title == event.Title {
+			return "", storage.ErrDuplicateEvent
+		}
 	}
-
+	event.ID = uuid.New().String()
 	st.events[event.ID] = event
+	return event.ID, nil
+}
+
+func (st *Storage) UpdateEvent(ctx context.Context, eventID string, modifyEvent storage.Event) error {
+	sEvent, err := st.GetEvent(ctx, eventID)
+	if err != nil {
+		return err
+	}
+	st.mu.Lock()
+	defer st.mu.Unlock()
+	if modifyEvent.Title == "" {
+		modifyEvent.Title = sEvent.Title
+	}
+	if modifyEvent.Date.IsZero() {
+		modifyEvent.Date = sEvent.Date
+	}
+	if modifyEvent.EndDate.IsZero() {
+		modifyEvent.EndDate = sEvent.EndDate
+	}
+	if modifyEvent.RemindDate.IsZero() {
+		modifyEvent.RemindDate = sEvent.RemindDate
+	}
+	if modifyEvent.Desc == "" {
+		modifyEvent.Desc = sEvent.Desc
+	}
+	if modifyEvent.UserID == "" {
+		modifyEvent.UserID = sEvent.UserID
+	}
+	st.events[eventID] = modifyEvent
 	return nil
 }
 
@@ -49,7 +81,7 @@ func (st *Storage) getEventsByPeriod(start, end time.Time) ([]storage.Event, err
 	defer st.mu.Unlock()
 	res := make([]storage.Event, 0, len(st.events))
 	for _, e := range st.events {
-		if e.Date.After(start) && e.EndDate.Before(end) {
+		if (e.Date.After(start) && e.Date.Before(end)) || (e.Date.Before(start) && e.EndDate.After(end)) {
 			res = append(res, e)
 		}
 	}
@@ -66,6 +98,14 @@ func (st *Storage) GetWeeklyEvents(ctx context.Context, date time.Time) ([]stora
 
 func (st *Storage) GetMonthlyEvents(ctx context.Context, date time.Time) ([]storage.Event, error) {
 	return st.getEventsByPeriod(date, date.AddDate(0, 1, 0))
+}
+
+func (st *Storage) Connect(ctx context.Context) error {
+	return nil
+}
+
+func (st *Storage) Close(ctx context.Context) error {
+	return nil
 }
 
 func New() *Storage {

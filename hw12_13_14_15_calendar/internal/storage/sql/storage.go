@@ -9,7 +9,9 @@ import (
 
 	"github.com/BBeRsErKeRR/otus-golang-hw/hw12_13_14_15_calendar/internal/storage"
 	"github.com/google/uuid"
-	_ "github.com/jackc/pgx/stdlib" //nolint:blank-imports
+	"github.com/jackc/pgerrcode"
+	"github.com/jackc/pgx/v5/pgconn"
+	_ "github.com/jackc/pgx/v5/stdlib" //nolint:blank-imports
 	"github.com/jmoiron/sqlx"
 )
 
@@ -25,6 +27,7 @@ type Storage struct {
 
 func (st *Storage) Connect(ctx context.Context) error {
 	var err error
+	fmt.Println(st.dataSourceName)
 	st.db, err = sqlx.ConnectContext(ctx, "pgx", st.dataSourceName)
 	if err != nil {
 		return err
@@ -76,15 +79,40 @@ func (st *Storage) execNamedQuery(ctx context.Context, query string, event stora
 	return res, err
 }
 
+const getEventQ = `
+SELECT * FROM events 
+WHERE id=$1
+`
+
+func (st *Storage) GetEvent(ctx context.Context, eventID string) (storage.Event, error) {
+	var res storage.Event
+	if st.db == nil {
+		return res, ErrNotInitDB
+	}
+	row := st.db.QueryRowxContext(ctx, getEventQ, eventID)
+	err := row.StructScan(&res)
+	if err != nil {
+		return res, err
+	}
+	return res, nil
+}
+
 const createEventQ = `
 INSERT INTO events(id, title, date, end_date, description, user_id, remind_date) 
 	VALUES (:id, :title, :date, :end_date, :description, :user_id, :remind_date)
 `
 
-func (st *Storage) CreateEvent(ctx context.Context, event storage.Event) error {
+func (st *Storage) CreateEvent(ctx context.Context, event storage.Event) (string, error) {
 	event.ID = uuid.New().String()
 	_, err := st.execNamedQuery(ctx, createEventQ, event)
-	return err
+	if err != nil {
+		var pgErr *pgconn.PgError
+		if errors.As(err, &pgErr) && pgErr.Code == pgerrcode.UniqueViolation {
+			return "", storage.ErrDuplicateEvent
+		}
+		return "", err
+	}
+	return event.ID, nil
 }
 
 const updateEventQ = `
@@ -98,10 +126,31 @@ UPDATE events
 	WHERE id = :id
 `
 
-func (st *Storage) UpdateEvent(ctx context.Context, eventID string, event storage.Event) error {
-	event.ID = eventID
-
-	res, err := st.execNamedQuery(ctx, updateEventQ, event)
+func (st *Storage) UpdateEvent(ctx context.Context, eventID string, modifyEvent storage.Event) error {
+	sEvent, err := st.GetEvent(ctx, eventID)
+	if err != nil {
+		return err
+	}
+	modifyEvent.ID = eventID
+	if modifyEvent.Title == "" {
+		modifyEvent.Title = sEvent.Title
+	}
+	if modifyEvent.Date.IsZero() {
+		modifyEvent.Date = sEvent.Date
+	}
+	if modifyEvent.EndDate.IsZero() {
+		modifyEvent.EndDate = sEvent.EndDate
+	}
+	if modifyEvent.RemindDate.IsZero() {
+		modifyEvent.RemindDate = sEvent.RemindDate
+	}
+	if modifyEvent.Desc == "" {
+		modifyEvent.Desc = sEvent.Desc
+	}
+	if modifyEvent.UserID == "" {
+		modifyEvent.UserID = sEvent.UserID
+	}
+	res, err := st.execNamedQuery(ctx, updateEventQ, modifyEvent)
 	if err != nil {
 		return err
 	}
@@ -124,8 +173,8 @@ func (st *Storage) DeleteEvent(ctx context.Context, eventID string) error {
 
 const getEventsByPeriodQ = `
 SELECT * FROM events 
-WHERE date>=$1 
-	AND end_date<=$2
+WHERE (date>=$1 AND date<=$2)
+	OR (date<$1 AND end_date>$2)
 `
 
 func (st *Storage) getEventsByPeriod(ctx context.Context, start, end time.Time) ([]storage.Event, error) {

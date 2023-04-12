@@ -12,8 +12,12 @@ import (
 
 type tStorage struct{}
 
-func (ts *tStorage) CreateEvent(ctx context.Context, event Event) error {
-	return nil
+func (ts *tStorage) GetEvent(ctx context.Context, eventID string) (Event, error) {
+	return Event{}, nil
+}
+
+func (ts *tStorage) CreateEvent(ctx context.Context, event Event) (string, error) {
+	return "", nil
 }
 
 func (ts *tStorage) UpdateEvent(ctx context.Context, id string, event Event) error {
@@ -36,6 +40,14 @@ func (ts *tStorage) GetMonthlyEvents(ctx context.Context, date time.Time) ([]Eve
 	return []Event{}, nil
 }
 
+func (ts *tStorage) Connect(ctx context.Context) error {
+	return nil
+}
+
+func (ts *tStorage) Close(ctx context.Context) error {
+	return nil
+}
+
 func TestStorage(t *testing.T) {
 	ctx := context.Background()
 	testcases := []struct {
@@ -48,7 +60,8 @@ func TestStorage(t *testing.T) {
 			Name:  "invalid title",
 			Event: Event{UserID: uuid.New().String(), Date: time.Now(), EndDate: time.Now().Add(4 * time.Hour)},
 			Action: func(ctx context.Context, u *EventUseCase, event Event) error {
-				return u.Create(context.Background(), event)
+				_, err := u.Create(context.Background(), event)
+				return err
 			},
 			Error: ErrEventTitle,
 		},
@@ -56,7 +69,8 @@ func TestStorage(t *testing.T) {
 			Name:  "invalid end date",
 			Event: Event{Title: "some event 1", UserID: uuid.New().String(), Date: time.Now()},
 			Action: func(ctx context.Context, u *EventUseCase, event Event) error {
-				return u.Create(context.Background(), event)
+				_, err := u.Create(context.Background(), event)
+				return err
 			},
 			Error: ErrEventEndDate,
 		},

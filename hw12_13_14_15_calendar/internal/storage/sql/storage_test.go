@@ -60,7 +60,7 @@ func TestStorage(t *testing.T) {
 				if _, err := db.Exec(`TRUNCATE TABLE events`); err != nil {
 					return err
 				}
-				err := st.CreateEvent(ctx, event)
+				_, err := st.CreateEvent(ctx, event)
 				if err != nil {
 					return err
 				}
@@ -130,6 +130,33 @@ func TestStorage(t *testing.T) {
 				}
 				if len(monthEvents) != 3 {
 					return fmt.Errorf("failed check date '%v' monthEvents '%v' found '%v'", testDate, 3, monthEvents)
+				}
+				return nil
+			},
+		},
+		{
+			Name: "check duplicate error",
+			Event: storage.Event{
+				Title:      "some event 1",
+				Desc:       "this is the test event 1",
+				UserID:     uuid.New().String(),
+				Date:       time.Now(),
+				EndDate:    time.Now().Add(4 * time.Hour),
+				RemindDate: time.Now().Add(3 * time.Hour),
+			},
+			Err: storage.ErrDuplicateEvent,
+			Action: func(ctx context.Context, st *Storage, event storage.Event, db *sqlx.DB) error {
+				id, err := st.CreateEvent(ctx, event)
+				if err != nil {
+					return err
+				}
+				_, err = st.GetEvent(ctx, id)
+				if err != nil {
+					return err
+				}
+				_, err = st.CreateEvent(ctx, event)
+				if err != nil {
+					return err
 				}
 				return nil
 			},

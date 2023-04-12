@@ -14,6 +14,11 @@ type CatchStatusResponseWriter struct {
 	Status int
 }
 
+func (s *CatchStatusResponseWriter) WriteHeader(status int) {
+	s.Status = status
+	s.ResponseWriter.WriteHeader(status)
+}
+
 func loggingMiddleware(next http.Handler, logger logger.Logger) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		start := time.Now()

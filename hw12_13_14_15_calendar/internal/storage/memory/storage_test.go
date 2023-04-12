@@ -33,7 +33,7 @@ func TestStorage(t *testing.T) {
 				RemindDate: time.Now().Add(3 * time.Hour),
 			},
 			Action: func(ctx context.Context, st *Storage, event storage.Event) error {
-				err := st.CreateEvent(ctx, event)
+				_, err := st.CreateEvent(ctx, event)
 				if err != nil {
 					return err
 				}
@@ -71,6 +71,33 @@ func TestStorage(t *testing.T) {
 				return nil
 			},
 		},
+		{
+			Name: "check duplicate error",
+			Event: storage.Event{
+				Title:      "some event 1",
+				Desc:       "this is the test event 1",
+				UserID:     uuid.New().String(),
+				Date:       time.Now(),
+				EndDate:    time.Now().Add(4 * time.Hour),
+				RemindDate: time.Now().Add(3 * time.Hour),
+			},
+			Err: storage.ErrDuplicateEvent,
+			Action: func(ctx context.Context, st *Storage, event storage.Event) error {
+				id, err := st.CreateEvent(ctx, event)
+				if err != nil {
+					return err
+				}
+				_, err = st.GetEvent(ctx, id)
+				if err != nil {
+					return err
+				}
+				_, err = st.CreateEvent(ctx, event)
+				if err != nil {
+					return err
+				}
+				return nil
+			},
+		},
 	}
 
 	for _, testcase := range testcases {
@@ -82,13 +109,17 @@ func TestStorage(t *testing.T) {
 	}
 
 	t.Run("some get check", func(t *testing.T) {
+		title := "not exist"
+		date := time.Now().Add(-48 * time.Hour)
+		endDate := time.Now().Add(-24 * time.Hour)
+		testDate := time.Now().Add(-4 * time.Minute)
 		memStorage := Storage{
 			events: map[string]storage.Event{
 				uuid.New().String(): {
-					Title:      "not exist",
+					Title:      title,
 					UserID:     uuid.New().String(),
-					Date:       time.Now().Add(-48 * time.Hour),
-					EndDate:    time.Now().Add(-24 * time.Hour),
+					Date:       date,
+					EndDate:    endDate,
 					RemindDate: time.Now().Add(-26 * time.Hour),
 				},
 				uuid.New().String(): {
@@ -117,7 +148,6 @@ func TestStorage(t *testing.T) {
 				},
 			},
 		}
-		testDate := time.Now().Add(-4 * time.Minute)
 		dayEvents, err := memStorage.GetDailyEvents(ctx, testDate)
 		require.NoError(t, err)
 		require.Equal(t, 1, len(dayEvents))

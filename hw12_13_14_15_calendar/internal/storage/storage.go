@@ -17,10 +17,13 @@ type Config struct {
 }
 
 type Storage interface {
-	CreateEvent(context.Context, Event) error
+	GetEvent(context.Context, string) (Event, error)
+	CreateEvent(context.Context, Event) (string, error)
 	UpdateEvent(context.Context, string, Event) error
 	DeleteEvent(context.Context, string) error
 	GetDailyEvents(context.Context, time.Time) ([]Event, error)
 	GetWeeklyEvents(context.Context, time.Time) ([]Event, error)
 	GetMonthlyEvents(context.Context, time.Time) ([]Event, error)
+	Connect(context.Context) error
+	Close(context.Context) error
 }

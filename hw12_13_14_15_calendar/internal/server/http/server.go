@@ -4,15 +4,13 @@ import (
 	"context"
 	"errors"
 	"log"
-	"net"
 	"net/http"
-	"regexp"
-	"strconv"
 	"time"
 
 	httprouter "github.com/BBeRsErKeRR/otus-golang-hw/hw12_13_14_15_calendar/api"
-	v1routes "github.com/BBeRsErKeRR/otus-golang-hw/hw12_13_14_15_calendar/api/v1"
+	v1routes "github.com/BBeRsErKeRR/otus-golang-hw/hw12_13_14_15_calendar/api/v1/http"
 	"github.com/BBeRsErKeRR/otus-golang-hw/hw12_13_14_15_calendar/internal/logger"
+	"github.com/BBeRsErKeRR/otus-golang-hw/hw12_13_14_15_calendar/internal/server"
 	"github.com/gorilla/mux"
 	"go.uber.org/zap"
 )
@@ -35,29 +33,8 @@ type Config struct {
 	ReadHeaderTimeout time.Duration `mapstructure:"read_header_timeout"`
 }
 
-func getAddress(hostArg string, portArg string) (string, error) {
-	var address string
-	re := regexp.MustCompile(`^((([a-z0-9][a-z0-9\-]*[a-z0-9])|[a-z0-9])\.?)+$`)
-
-	if hostArg != "localhost" && !re.MatchString(hostArg) && net.ParseIP(hostArg) == nil {
-		return address, ErrorUnsupportedHostAddress
-	}
-
-	port, err := strconv.Atoi(portArg)
-	if err != nil {
-		return address, err
-	}
-
-	if port < 1 || port > 65535 {
-		return address, ErrorInvalidPort
-	}
-
-	address = net.JoinHostPort(hostArg, portArg)
-	return address, nil
-}
-
 func NewServer(logger logger.Logger, app httprouter.Application, conf *Config) *Server {
-	addr, err := getAddress(conf.Host, conf.Port)
+	addr, err := server.GetAddress(conf.Host, conf.Port)
 	if err != nil {
 		log.Fatal(err)
 	}
@@ -79,7 +56,7 @@ func NewServer(logger logger.Logger, app httprouter.Application, conf *Config) *
 func (s *Server) Start(ctx context.Context) error {
 	s.logger.Info("starting server", zap.String("address", s.server.Addr))
 	err := s.server.ListenAndServe()
-	if err != nil && errors.Is(err, http.ErrServerClosed) {
+	if err != nil && !errors.Is(err, http.ErrServerClosed) {
 		return err
 	}
 	<-ctx.Done()

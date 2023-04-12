@@ -53,7 +53,7 @@ func New(conf *Config) (Logger, error) {
 		EncoderConfig: zap.NewProductionEncoderConfig(),
 	}
 
-	zapLogger, err := cfg.Build()
+	zapLogger, err := cfg.Build(zap.AddCaller(), zap.AddCallerSkip(1))
 	if err != nil {
 		return nil, err
 	}
