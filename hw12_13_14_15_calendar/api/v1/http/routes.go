@@ -21,26 +21,6 @@ type DateRequest struct {
 	Date time.Time `json:"date"`
 }
 
-type EventDTO struct {
-	Title      string    `json:"title"`
-	Date       time.Time `json:"date"`
-	EndDate    time.Time `json:"end_date"` //nolint:tagliatelle
-	Desc       string    `json:"description"`
-	UserID     string    `json:"user_id"`     //nolint:tagliatelle
-	RemindDate time.Time `json:"remind_date"` //nolint:tagliatelle
-}
-
-func (e *EventDTO) transfer() storage.Event {
-	return storage.Event{
-		Title:      e.Title,
-		Date:       e.Date,
-		EndDate:    e.EndDate,
-		Desc:       e.Desc,
-		UserID:     e.UserID,
-		RemindDate: e.RemindDate,
-	}
-}
-
 type Handler struct {
 	app    router.Application
 	logger logger.Logger
@@ -100,9 +80,9 @@ func (h *Handler) CreateEvent(w http.ResponseWriter, r *http.Request) {
 		h.sendError(err, http.StatusBadRequest, w)
 		return
 	}
-	var data EventDTO
+	var data storage.EventDTO
 	json.Unmarshal(reqBody, &data)
-	id, err := h.app.CreateEvent(r.Context(), data.transfer())
+	id, err := h.app.CreateEvent(r.Context(), data.Transfer())
 	if err != nil {
 		h.sendError(err, http.StatusBadRequest, w)
 		return
@@ -122,13 +102,13 @@ func (h *Handler) UpdateEvent(w http.ResponseWriter, r *http.Request) {
 		h.sendError(err, http.StatusBadRequest, w)
 		return
 	}
-	var data EventDTO
+	var data storage.EventDTO
 	err = json.Unmarshal(reqBody, &data)
 	if err != nil {
 		h.sendError(err, http.StatusBadRequest, w)
 		return
 	}
-	err = h.app.UpdateEvent(r.Context(), id, data.transfer())
+	err = h.app.UpdateEvent(r.Context(), id, data.Transfer())
 	if err != nil {
 		h.sendError(err, http.StatusBadRequest, w)
 		return

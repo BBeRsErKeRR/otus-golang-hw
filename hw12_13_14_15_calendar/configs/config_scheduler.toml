@@ -1,0 +1,25 @@
+duration=120s
+
+[logger]
+level = "DEBUG"
+out_paths = ["stdout"]
+err_paths = ["stderr"]
+
+[database]
+storage = "sql"
+driver = "postgres"
+host = "localhost"
+port = "5532"
+db = "calendar"
+user = "calendar"
+password = "developer"
+ssl = "disable"
+
+[producer]
+host = "localhost"
+port = "5672"
+protocol = "amqp"
+username = "guest"
+password = "guest"
+exchange = "calendar"
+queue = "notifications"

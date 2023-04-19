@@ -30,6 +30,26 @@ type Event struct {
 	RemindDate time.Time `db:"remind_date"`
 }
 
+type EventDTO struct {
+	Title      string    `json:"title"`
+	Date       time.Time `json:"date"`
+	EndDate    time.Time `json:"end_date"` //nolint:tagliatelle
+	Desc       string    `json:"description"`
+	UserID     string    `json:"user_id"`     //nolint:tagliatelle
+	RemindDate time.Time `json:"remind_date"` //nolint:tagliatelle
+}
+
+func (e *EventDTO) Transfer() Event {
+	return Event{
+		Title:      e.Title,
+		Date:       e.Date,
+		EndDate:    e.EndDate,
+		Desc:       e.Desc,
+		UserID:     e.UserID,
+		RemindDate: e.RemindDate,
+	}
+}
+
 type EventUseCase struct {
 	storage Storage
 }
@@ -119,6 +139,14 @@ func (u *EventUseCase) Delete(ctx context.Context, eventID string) error {
 	return nil
 }
 
+func (u *EventUseCase) DeleteBeforeDate(ctx context.Context, date time.Time) error {
+	err := u.storage.DeleteEventsBeforeDate(ctx, date)
+	if err != nil {
+		return fmt.Errorf("EventUseCase - DeleteBeforeDate - u.storage.DeleteEventsBeforeDate: %w", err)
+	}
+	return nil
+}
+
 func (u *EventUseCase) GetDailyEvents(ctx context.Context, date time.Time) ([]Event, error) {
 	events, err := u.storage.GetDailyEvents(ctx, date)
 	if err != nil {
@@ -139,6 +167,14 @@ func (u *EventUseCase) GetMonthlyEvents(ctx context.Context, date time.Time) ([]
 	events, err := u.storage.GetMonthlyEvents(ctx, date)
 	if err != nil {
 		return nil, fmt.Errorf("EventUseCase - MonthlyEvents - u.storage.MonthlyEvents: %w", err)
+	}
+	return events, nil
+}
+
+func (u *EventUseCase) GetEventsByPeriod(ctx context.Context, start, end time.Time) ([]Event, error) {
+	events, err := u.storage.GetEventsByPeriod(ctx, start, end)
+	if err != nil {
+		return nil, fmt.Errorf("EventUseCase - GetEventsByPeriod - u.storage.GetEventsByPeriod: %w", err)
 	}
 	return events, nil
 }

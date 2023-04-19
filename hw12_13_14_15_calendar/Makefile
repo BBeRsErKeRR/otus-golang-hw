@@ -6,7 +6,9 @@
 SHELL=/bin/bash
 SHELLOPTS:=$(if $(SHELLOPTS),$(SHELLOPTS):)pipefail:errexit
 
-BIN := "./bin/calendar"
+BIN_CALENDAR := "./bin/calendar"
+BIN_SCHEDULER := "./bin/scheduler"
+BIN_SENDER := "./bin/sender"
 
 
 help: ## Display this help
@@ -18,14 +20,28 @@ help: ## Display this help
 generate: ## Generate proto files
 	go $@ ./...
 
-build: ## Build application
-	go build -v -o $(BIN) -ldflags "$(LDFLAGS)" ./cmd/calendar
+build-scheduler:
+	go build -v -o $(BIN_SCHEDULER) -ldflags "$(LDFLAGS)" ./cmd/scheduler
 
-run: build ## Run calendar app
-	source make/.env && $(BIN) --config ./configs/config.toml
+build-sender:
+	go build -v -o $(BIN_SENDER) -ldflags "$(LDFLAGS)" ./cmd/sender
+
+build-calendar:
+	go build -v -o $(BIN_CALENDAR) -ldflags "$(LDFLAGS)" ./cmd/calendar
+
+build: build-scheduler build-sender build-calendar ## Build application
+
+run-calendar: build-calendar ## Run calendar app
+	source make/.env && $(BIN_CALENDAR) --config ./configs/config.toml
+
+run-scheduler: build-scheduler ## Run scheduler app
+	source make/.env && $(BIN_SCHEDULER) --config ./configs/config_scheduler.toml
+
+run-sender: build-sender ## Run sender app
+	source make/.env && $(BIN_SENDER) --config ./configs/config_sender.toml
 
 version: build  ## Project version
-	$(BIN) version
+	$(BIN_CALENDAR) version
 
 test: ## Execute tests
 	go test -race ./internal/... ./api/...

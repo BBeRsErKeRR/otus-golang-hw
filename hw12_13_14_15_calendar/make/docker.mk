@@ -32,10 +32,6 @@ service-up:
 service-stop:
 	@$(__COMPOSE_CMD) stop $(_SERVICE)
 
-.PHONY: service-down
-service-down: ## Remove all services
-	@$(__COMPOSE_CMD) down -v
-
 .PHONY: service-restart
 service-restart:
 	@$(__COMPOSE_CMD) restart $(_SERVICE)
@@ -48,9 +44,17 @@ service-attach:
 service-logs:
 	@$(__COMPOSE_CMD) logs --tail 100 $(_SERVICE)
 
-.PHONY: service-status
-service-status: ## See current services status
+.PHONY: services-status
+services-status: ## See current services status
 	@$(__COMPOSE_CMD) ps
+
+.PHONY: services-down
+services-down: ## Remove all services
+	@$(__COMPOSE_CMD) down -v
+
+.PHONY: services-up
+services-up: ## Up all services
+	@$(__COMPOSE_CMD) up -d
 
 .PHONY: postgres-up
 postgres-up: ## Up dev postgress
@@ -67,3 +71,19 @@ postgres-logs: ## See dev postgress logs
 .PHONY: postgres-attach
 postgres-attach: ## Attach to psql container
 	$(MAKE) _SERVICE=calendar_postgres service-attach
+
+.PHONY: mq-up
+mq-up: ## Up dev postgress
+	$(MAKE) _SERVICE=calendar_mq service-up
+
+.PHONY: postgres-stop
+mq-stop: ## Stop dev postgress
+	$(MAKE) _SERVICE=calendar_mq service-stop
+
+.PHONY: postgres-logs
+mq-logs: ## See dev postgress logs
+	$(MAKE) _SERVICE=calendar_mq service-logs
+
+.PHONY: postgres-attach
+mq-attach: ## Attach to psql container
+	$(MAKE) _SERVICE=calendar_mq service-attach

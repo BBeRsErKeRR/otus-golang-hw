@@ -171,13 +171,23 @@ func (st *Storage) DeleteEvent(ctx context.Context, eventID string) error {
 	return err
 }
 
+const deleteBeforeEventQ = `DELETE FROM events WHERE end_date <= $1`
+
+func (st *Storage) DeleteEventsBeforeDate(ctx context.Context, date time.Time) error {
+	if st.db == nil {
+		return ErrNotInitDB
+	}
+	_, err := st.db.ExecContext(ctx, deleteBeforeEventQ, date.UTC())
+	return err
+}
+
 const getEventsByPeriodQ = `
 SELECT * FROM events 
 WHERE (date>=$1 AND date<=$2)
 	OR (date<$1 AND end_date>$2)
 `
 
-func (st *Storage) getEventsByPeriod(ctx context.Context, start, end time.Time) ([]storage.Event, error) {
+func (st *Storage) GetEventsByPeriod(ctx context.Context, start, end time.Time) ([]storage.Event, error) {
 	var res []storage.Event
 	if st.db == nil {
 		return res, ErrNotInitDB
@@ -190,13 +200,13 @@ func (st *Storage) getEventsByPeriod(ctx context.Context, start, end time.Time) 
 }
 
 func (st *Storage) GetDailyEvents(ctx context.Context, date time.Time) ([]storage.Event, error) {
-	return st.getEventsByPeriod(ctx, date, date.AddDate(0, 0, 1))
+	return st.GetEventsByPeriod(ctx, date, date.AddDate(0, 0, 1))
 }
 
 func (st *Storage) GetWeeklyEvents(ctx context.Context, date time.Time) ([]storage.Event, error) {
-	return st.getEventsByPeriod(ctx, date, date.AddDate(0, 0, 7))
+	return st.GetEventsByPeriod(ctx, date, date.AddDate(0, 0, 7))
 }
 
 func (st *Storage) GetMonthlyEvents(ctx context.Context, date time.Time) ([]storage.Event, error) {
-	return st.getEventsByPeriod(ctx, date, date.AddDate(0, 1, 0))
+	return st.GetEventsByPeriod(ctx, date, date.AddDate(0, 1, 0))
 }
