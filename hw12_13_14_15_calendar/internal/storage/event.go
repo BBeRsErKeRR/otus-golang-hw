@@ -21,13 +21,13 @@ var (
 )
 
 type Event struct {
-	ID         string    `db:"id"`
-	Title      string    `db:"title"`
-	Date       time.Time `db:"date"`
-	EndDate    time.Time `db:"end_date"`
-	Desc       string    `db:"description"`
-	UserID     string    `db:"user_id"`
-	RemindDate time.Time `db:"remind_date"`
+	ID         string    `db:"id" json:"id"`
+	Title      string    `db:"title" json:"title"`
+	Date       time.Time `db:"date" json:"date"`
+	EndDate    time.Time `db:"end_date" json:"end_date"` //nolint:tagliatelle
+	Desc       string    `db:"description" json:"description"`
+	UserID     string    `db:"user_id" json:"user_id"`         //nolint:tagliatelle
+	RemindDate time.Time `db:"remind_date" json:"remind_date"` //nolint:tagliatelle
 }
 
 type EventDTO struct {

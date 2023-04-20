@@ -5,22 +5,21 @@ import (
 	"log"
 
 	"github.com/BBeRsErKeRR/otus-golang-hw/hw12_13_14_15_calendar/internal/logger"
-	"github.com/BBeRsErKeRR/otus-golang-hw/hw12_13_14_15_calendar/internal/mq"
 	"github.com/BBeRsErKeRR/otus-golang-hw/hw12_13_14_15_calendar/internal/mq/consumer"
-	"github.com/streadway/amqp"
+	"github.com/BBeRsErKeRR/otus-golang-hw/hw12_13_14_15_calendar/internal/utils"
+	"github.com/BBeRsErKeRR/otus-golang-hw/hw12_13_14_15_calendar/pkg/rmq"
 )
 
 type Consumer struct {
 	Addr         string
 	Subscription string
 	ConsumerName string
-	connection   *amqp.Connection
-	channel      *amqp.Channel
+	mq           rmq.MessageQueue
 	logger       logger.Logger
 }
 
 func New(conf *consumer.Config, logger logger.Logger) *Consumer {
-	addr, err := mq.GetAddress(conf.Protocol, conf.Host, conf.Port, conf.Username, conf.Password)
+	addr, err := utils.GetMqAddress(conf.Protocol, conf.Host, conf.Port, conf.Username, conf.Password)
 	if err != nil {
 		log.Fatal(err)
 	}
@@ -29,32 +28,17 @@ func New(conf *consumer.Config, logger logger.Logger) *Consumer {
 		Subscription: conf.Subscription,
 		ConsumerName: conf.ConsumerName,
 		logger:       logger,
+		mq:           rmq.MessageQueue{},
 	}
 }
 
 func (c *Consumer) Connect(ctx context.Context) error {
-	var err error
 	c.logger.Info("connect to rmq")
-	c.connection, err = amqp.Dial(c.Addr)
-	if err != nil {
-		return err
-	}
-
-	c.channel, err = c.connection.Channel()
-	if err != nil {
-		return err
-	}
-
-	<-ctx.Done()
-	return nil
+	return c.mq.Connect(c.Addr)
 }
 
 func (c *Consumer) Close(ctx context.Context) error {
-	err := c.channel.Close()
-	if err != nil {
-		return err
-	}
-	err = c.connection.Close()
+	err := c.mq.Close()
 	if err != nil {
 		return err
 	}
@@ -63,7 +47,7 @@ func (c *Consumer) Close(ctx context.Context) error {
 }
 
 func (c *Consumer) Consume(ctx context.Context, f func(ctx context.Context, msg []byte)) error {
-	msgs, err := c.channel.Consume(
+	msgs, err := c.mq.Channel.Consume(
 		c.Subscription,
 		c.ConsumerName,
 		true,
@@ -79,7 +63,7 @@ func (c *Consumer) Consume(ctx context.Context, f func(ctx context.Context, msg 
 	for {
 		select {
 		case <-ctx.Done():
-			return nil
+			return ctx.Err()
 		case msg, ok := <-msgs:
 			if !ok {
 				return nil

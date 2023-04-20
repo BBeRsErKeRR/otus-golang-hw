@@ -7,7 +7,7 @@ import (
 	"syscall"
 
 	"github.com/BBeRsErKeRR/otus-golang-hw/hw12_13_14_15_calendar/internal/app"
-	version_cmd "github.com/BBeRsErKeRR/otus-golang-hw/hw12_13_14_15_calendar/internal/cmd"
+	versioncmd "github.com/BBeRsErKeRR/otus-golang-hw/hw12_13_14_15_calendar/internal/cmd"
 	"github.com/BBeRsErKeRR/otus-golang-hw/hw12_13_14_15_calendar/internal/logger"
 	internalgrpc "github.com/BBeRsErKeRR/otus-golang-hw/hw12_13_14_15_calendar/internal/server/grpc"
 	internalhttp "github.com/BBeRsErKeRR/otus-golang-hw/hw12_13_14_15_calendar/internal/server/http"
@@ -72,5 +72,5 @@ func Execute() error {
 
 func init() {
 	rootCmd.PersistentFlags().StringVar(&cfgFile, "config", "./configs/config.toml", "Configuration file path")
-	rootCmd.AddCommand(version_cmd.VersionCmd)
+	rootCmd.AddCommand(versioncmd.VersionCmd)
 }

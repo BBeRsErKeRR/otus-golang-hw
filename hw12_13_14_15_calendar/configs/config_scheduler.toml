@@ -1,4 +1,4 @@
-duration=120s
+duration = "120s"
 
 [logger]
 level = "DEBUG"
@@ -15,7 +15,7 @@ user = "calendar"
 password = "developer"
 ssl = "disable"
 
-[producer]
+[mq]
 host = "localhost"
 port = "5672"
 protocol = "amqp"

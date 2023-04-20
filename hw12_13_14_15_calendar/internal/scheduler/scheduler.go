@@ -9,6 +9,7 @@ import (
 	"github.com/BBeRsErKeRR/otus-golang-hw/hw12_13_14_15_calendar/internal/mq/producer"
 	internalrmqproducer "github.com/BBeRsErKeRR/otus-golang-hw/hw12_13_14_15_calendar/internal/mq/producer/rmq"
 	"github.com/BBeRsErKeRR/otus-golang-hw/hw12_13_14_15_calendar/internal/storage"
+	"github.com/goccy/go-json"
 	"go.uber.org/zap"
 )
 
@@ -28,11 +29,12 @@ func New(logger logger.Logger, pU producer.ProducerUseCase, sU storage.EventUseC
 	}
 }
 
-func (a *App) Publish(ctx context.Context, event storage.Event) error {
-	return a.pU.Publish(ctx, event)
+func (a *App) Publish(ctx context.Context, data []byte) error {
+	return a.pU.Publish(ctx, data)
 }
 
 func (a *App) Obsolescence(ctx context.Context) error {
+	a.logger.Info("Starting obsolescence old events")
 	return a.sU.DeleteBeforeDate(ctx, time.Now().AddDate(-1, 0, 0))
 }
 
@@ -46,7 +48,13 @@ func (a *App) PublishEvents(ctx context.Context) {
 	}
 
 	for _, event := range events {
-		if err := a.Publish(ctx, event); err != nil {
+		a.logger.Info(fmt.Sprintf("publish event %v, %s for user %v", event.ID, event.Title, event.UserID))
+		encoded, err := json.Marshal(event)
+		if err != nil {
+			a.logger.Error("fail marshal event", zap.Error(err))
+			return
+		}
+		if err := a.Publish(ctx, encoded); err != nil {
 			a.logger.Error("fail publish event", zap.Error(err))
 		}
 	}
@@ -55,7 +63,8 @@ func (a *App) PublishEvents(ctx context.Context) {
 func (a *App) Run(ctx context.Context) error {
 	ticker := time.NewTicker(a.duration)
 	defer ticker.Stop()
-
+	a.logger.Info("Starting scheduler")
+	defer a.logger.Info("Stopping scheduler")
 	for {
 		go func() {
 			a.PublishEvents(ctx)
@@ -63,6 +72,7 @@ func (a *App) Run(ctx context.Context) error {
 			if err != nil {
 				a.logger.Error(fmt.Sprintf("fail delete old events %s", err))
 			}
+			a.logger.Info(fmt.Sprintf("Next operation start after %s", a.duration))
 		}()
 
 		select {

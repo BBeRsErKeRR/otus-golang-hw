@@ -7,7 +7,7 @@ import (
 	"syscall"
 
 	"github.com/BBeRsErKeRR/otus-golang-hw/hw12_13_14_15_calendar/internal/app"
-	version_cmd "github.com/BBeRsErKeRR/otus-golang-hw/hw12_13_14_15_calendar/internal/cmd"
+	versioncmd "github.com/BBeRsErKeRR/otus-golang-hw/hw12_13_14_15_calendar/internal/cmd"
 	"github.com/BBeRsErKeRR/otus-golang-hw/hw12_13_14_15_calendar/internal/logger"
 	"github.com/BBeRsErKeRR/otus-golang-hw/hw12_13_14_15_calendar/internal/scheduler"
 	"github.com/spf13/cobra"
@@ -40,14 +40,12 @@ var rootCmd = &cobra.Command{
 			return
 		}
 
-		producer := scheduler.GetProducer(config.Producer, logg)
-		err = producer.Connect(ctx)
-		if err != nil {
-			logg.Error("Error create mq connection: " + err.Error())
-			return
-		}
+		produce := scheduler.GetProducer(config.Producer, logg)
+		appl := scheduler.New(logg, scheduler.GetProducerUseCase(produce), storage, config.Duration)
 
-		appl := scheduler.New(logg, scheduler.GetProducerUseCase(producer), storage, config.Duration)
+		if err = produce.Connect(ctx); err != nil {
+			logg.Error("Error create mq connection: " + err.Error())
+		}
 
 		go func() {
 			if err := appl.Run(ctx); err != nil {
@@ -56,7 +54,7 @@ var rootCmd = &cobra.Command{
 			}
 		}()
 
-		defer producer.Close(ctx)
+		defer produce.Close(ctx)
 		defer storage.Close(ctx)
 
 		<-ctx.Done()
@@ -65,7 +63,7 @@ var rootCmd = &cobra.Command{
 
 func init() {
 	rootCmd.PersistentFlags().StringVar(&cfgFile, "config", "./configs/scheduler_config.toml", "Configuration file path")
-	rootCmd.AddCommand(version_cmd.VersionCmd)
+	rootCmd.AddCommand(versioncmd.VersionCmd)
 }
 
 func main() {

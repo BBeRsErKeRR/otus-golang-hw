@@ -1,4 +1,4 @@
-package mq
+package utils
 
 import (
 	"errors"
@@ -15,7 +15,7 @@ var (
 	addrMatcher                 = regexp.MustCompile(`^((([a-z0-9][a-z0-9\-]*[a-z0-9])|[a-z0-9])\.?)+$`)
 )
 
-func GetAddress(protocolArg, hostArg, portArg, userArg, passArg string) (string, error) {
+func GetMqAddress(protocolArg, hostArg, portArg, userArg, passArg string) (string, error) {
 	var address string
 
 	if protocolArg != "amqp" {
@@ -43,5 +43,25 @@ func GetAddress(protocolArg, hostArg, portArg, userArg, passArg string) (string,
 		address = fmt.Sprintf("%v://%v", protocolArg, netAddress)
 	}
 
+	return address, nil
+}
+
+func GetAddress(hostArg string, portArg string) (string, error) {
+	var address string
+
+	if hostArg != "localhost" && !addrMatcher.MatchString(hostArg) && net.ParseIP(hostArg) == nil {
+		return address, ErrorUnsupportedHostAddress
+	}
+
+	port, err := strconv.Atoi(portArg)
+	if err != nil {
+		return address, err
+	}
+
+	if port < 1 || port > 65535 {
+		return address, ErrorInvalidPort
+	}
+
+	address = net.JoinHostPort(hostArg, portArg)
 	return address, nil
 }
