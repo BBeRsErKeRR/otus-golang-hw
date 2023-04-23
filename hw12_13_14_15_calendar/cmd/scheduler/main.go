@@ -9,6 +9,7 @@ import (
 	"github.com/BBeRsErKeRR/otus-golang-hw/hw12_13_14_15_calendar/internal/app"
 	versioncmd "github.com/BBeRsErKeRR/otus-golang-hw/hw12_13_14_15_calendar/internal/cmd"
 	"github.com/BBeRsErKeRR/otus-golang-hw/hw12_13_14_15_calendar/internal/logger"
+	internalrmqproducer "github.com/BBeRsErKeRR/otus-golang-hw/hw12_13_14_15_calendar/internal/mq/producer/rmq"
 	"github.com/BBeRsErKeRR/otus-golang-hw/hw12_13_14_15_calendar/internal/scheduler"
 	"github.com/spf13/cobra"
 )
@@ -40,8 +41,8 @@ var rootCmd = &cobra.Command{
 			return
 		}
 
-		produce := scheduler.GetProducer(config.Producer, logg)
-		appl := scheduler.New(logg, scheduler.GetProducerUseCase(produce), storage, config.Duration)
+		produce := internalrmqproducer.New(config.Producer, logg)
+		appl := scheduler.New(logg, produce, storage, config.Duration)
 
 		if err = produce.Connect(ctx); err != nil {
 			logg.Error("Error create mq connection: " + err.Error())

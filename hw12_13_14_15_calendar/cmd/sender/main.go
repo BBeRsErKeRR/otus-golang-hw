@@ -8,6 +8,7 @@ import (
 
 	versioncmd "github.com/BBeRsErKeRR/otus-golang-hw/hw12_13_14_15_calendar/internal/cmd"
 	"github.com/BBeRsErKeRR/otus-golang-hw/hw12_13_14_15_calendar/internal/logger"
+	internalrmqconsumer "github.com/BBeRsErKeRR/otus-golang-hw/hw12_13_14_15_calendar/internal/mq/consumer/rmq"
 	"github.com/BBeRsErKeRR/otus-golang-hw/hw12_13_14_15_calendar/internal/sender"
 	"github.com/spf13/cobra"
 )
@@ -32,7 +33,7 @@ var rootCmd = &cobra.Command{
 			return
 		}
 
-		consumer := sender.GetConsumerUseCase(config.Consumer, logg)
+		consumer := internalrmqconsumer.New(config.Consumer, logg)
 		app := sender.New(logg, consumer)
 
 		if err := consumer.Connect(ctx); err != nil {

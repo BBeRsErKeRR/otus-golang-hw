@@ -6,12 +6,21 @@ import (
 	"time"
 
 	"github.com/BBeRsErKeRR/otus-golang-hw/hw12_13_14_15_calendar/internal/logger"
-	"github.com/BBeRsErKeRR/otus-golang-hw/hw12_13_14_15_calendar/internal/mq/producer"
 	"github.com/BBeRsErKeRR/otus-golang-hw/hw12_13_14_15_calendar/internal/utils"
 	"github.com/BBeRsErKeRR/otus-golang-hw/hw12_13_14_15_calendar/pkg/rmq"
 	"github.com/streadway/amqp"
 	"go.uber.org/zap"
 )
+
+type Config struct {
+	Host         string `mapstructure:"host"`
+	Port         string `mapstructure:"port"`
+	Protocol     string `mapstructure:"protocol"`
+	Username     string `mapstructure:"username"`
+	Password     string `mapstructure:"password"`
+	QueueName    string `mapstructure:"queue"`
+	ExchangeName string `mapstructure:"exchange"`
+}
 
 type Producer struct {
 	Addr         string
@@ -21,7 +30,7 @@ type Producer struct {
 	logger       logger.Logger
 }
 
-func New(conf *producer.Config, logger logger.Logger) *Producer {
+func New(conf *Config, logger logger.Logger) *Producer {
 	addr, err := utils.GetMqAddress(conf.Protocol, conf.Host, conf.Port, conf.Username, conf.Password)
 	if err != nil {
 		log.Fatal(err)

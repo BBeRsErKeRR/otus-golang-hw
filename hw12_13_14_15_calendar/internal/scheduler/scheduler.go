@@ -7,7 +7,6 @@ import (
 
 	"github.com/BBeRsErKeRR/otus-golang-hw/hw12_13_14_15_calendar/internal/logger"
 	"github.com/BBeRsErKeRR/otus-golang-hw/hw12_13_14_15_calendar/internal/mq/producer"
-	internalrmqproducer "github.com/BBeRsErKeRR/otus-golang-hw/hw12_13_14_15_calendar/internal/mq/producer/rmq"
 	"github.com/BBeRsErKeRR/otus-golang-hw/hw12_13_14_15_calendar/internal/storage"
 	"github.com/goccy/go-json"
 	"go.uber.org/zap"
@@ -16,21 +15,21 @@ import (
 type App struct {
 	logger   logger.Logger
 	duration time.Duration
-	pU       producer.ProducerUseCase
+	p        producer.Producer
 	sU       storage.EventUseCase
 }
 
-func New(logger logger.Logger, pU producer.ProducerUseCase, sU storage.EventUseCase, duration time.Duration) *App {
+func New(logger logger.Logger, p producer.Producer, sU storage.EventUseCase, duration time.Duration) *App {
 	return &App{
 		logger:   logger,
-		pU:       pU,
+		p:        p,
 		sU:       sU,
 		duration: duration,
 	}
 }
 
 func (a *App) Publish(ctx context.Context, data []byte) error {
-	return a.pU.Publish(ctx, data)
+	return a.p.Publish(ctx, data)
 }
 
 func (a *App) Obsolescence(ctx context.Context) error {
@@ -81,12 +80,4 @@ func (a *App) Run(ctx context.Context) error {
 		case <-ticker.C:
 		}
 	}
-}
-
-func GetProducer(cfg *producer.Config, logger logger.Logger) producer.Producer {
-	return internalrmqproducer.New(cfg, logger)
-}
-
-func GetProducerUseCase(p producer.Producer) producer.ProducerUseCase {
-	return *producer.New(p)
 }
