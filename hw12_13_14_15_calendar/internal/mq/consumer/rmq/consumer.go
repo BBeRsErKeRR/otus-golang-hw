@@ -5,7 +5,6 @@ import (
 	"log"
 
 	"github.com/BBeRsErKeRR/otus-golang-hw/hw12_13_14_15_calendar/internal/logger"
-	"github.com/BBeRsErKeRR/otus-golang-hw/hw12_13_14_15_calendar/internal/utils"
 	"github.com/BBeRsErKeRR/otus-golang-hw/hw12_13_14_15_calendar/pkg/rmq"
 )
 
@@ -28,7 +27,7 @@ type Consumer struct {
 }
 
 func New(conf *Config, logger logger.Logger) *Consumer {
-	addr, err := utils.GetMqAddress(conf.Protocol, conf.Host, conf.Port, conf.Username, conf.Password)
+	addr, err := rmq.GetMqAddress(conf.Protocol, conf.Host, conf.Port, conf.Username, conf.Password)
 	if err != nil {
 		log.Fatal(err)
 	}

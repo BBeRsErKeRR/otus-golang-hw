@@ -8,7 +8,7 @@ import (
 	router "github.com/BBeRsErKeRR/otus-golang-hw/hw12_13_14_15_calendar/api"
 	v1grpc "github.com/BBeRsErKeRR/otus-golang-hw/hw12_13_14_15_calendar/api/v1/grpc"
 	"github.com/BBeRsErKeRR/otus-golang-hw/hw12_13_14_15_calendar/internal/logger"
-	"github.com/BBeRsErKeRR/otus-golang-hw/hw12_13_14_15_calendar/internal/utils"
+	pkgnet "github.com/BBeRsErKeRR/otus-golang-hw/hw12_13_14_15_calendar/pkg/net"
 	"go.uber.org/zap"
 	"google.golang.org/grpc"
 )
@@ -25,7 +25,7 @@ type Config struct {
 }
 
 func NewServer(logger logger.Logger, app router.Application, conf *Config) *Server {
-	addr, err := utils.GetAddress(conf.Host, conf.Port)
+	addr, err := pkgnet.GetAddress(conf.Host, conf.Port)
 	if err != nil {
 		log.Fatal(err)
 	}

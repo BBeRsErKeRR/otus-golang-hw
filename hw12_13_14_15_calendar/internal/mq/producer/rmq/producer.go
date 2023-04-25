@@ -6,7 +6,6 @@ import (
 	"time"
 
 	"github.com/BBeRsErKeRR/otus-golang-hw/hw12_13_14_15_calendar/internal/logger"
-	"github.com/BBeRsErKeRR/otus-golang-hw/hw12_13_14_15_calendar/internal/utils"
 	"github.com/BBeRsErKeRR/otus-golang-hw/hw12_13_14_15_calendar/pkg/rmq"
 	"github.com/streadway/amqp"
 	"go.uber.org/zap"
@@ -31,7 +30,7 @@ type Producer struct {
 }
 
 func New(conf *Config, logger logger.Logger) *Producer {
-	addr, err := utils.GetMqAddress(conf.Protocol, conf.Host, conf.Port, conf.Username, conf.Password)
+	addr, err := rmq.GetMqAddress(conf.Protocol, conf.Host, conf.Port, conf.Username, conf.Password)
 	if err != nil {
 		log.Fatal(err)
 	}
@@ -50,10 +49,10 @@ func (p *Producer) Connect(ctx context.Context) error {
 	if err != nil {
 		return err
 	}
-	return p.Declare()
+	return p.declare()
 }
 
-func (p *Producer) Declare() error {
+func (p *Producer) declare() error {
 	err := p.mq.Channel.ExchangeDeclare(
 		p.ExchangeName, // name
 		"direct",       // type
