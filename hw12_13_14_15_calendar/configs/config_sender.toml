@@ -1,0 +1,13 @@
+[logger]
+level = "DEBUG"
+out_paths = ["stdout"]
+err_paths = ["stderr"]
+
+[rmq]
+host = "localhost"
+port = "5672"
+protocol = "amqp"
+username = "guest"
+password = "guest"
+subscription = "notifications"
+consumer_name = "calendar"

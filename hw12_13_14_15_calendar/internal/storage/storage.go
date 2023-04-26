@@ -21,9 +21,11 @@ type Storage interface {
 	CreateEvent(context.Context, Event) (string, error)
 	UpdateEvent(context.Context, string, Event) error
 	DeleteEvent(context.Context, string) error
+	DeleteEventsBeforeDate(context.Context, time.Time) error
 	GetDailyEvents(context.Context, time.Time) ([]Event, error)
 	GetWeeklyEvents(context.Context, time.Time) ([]Event, error)
 	GetMonthlyEvents(context.Context, time.Time) ([]Event, error)
+	GetEventsByPeriod(context.Context, time.Time, time.Time) ([]Event, error)
 	Connect(context.Context) error
 	Close(context.Context) error
 }

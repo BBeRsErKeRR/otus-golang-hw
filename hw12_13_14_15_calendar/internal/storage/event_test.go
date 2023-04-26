@@ -28,6 +28,14 @@ func (ts *tStorage) DeleteEvent(ctx context.Context, id string) error {
 	return nil
 }
 
+func (ts *tStorage) DeleteEventsBeforeDate(ctx context.Context, date time.Time) error {
+	return nil
+}
+
+func (ts *tStorage) GetEventsByPeriod(ctx context.Context, start, date time.Time) ([]Event, error) {
+	return []Event{}, nil
+}
+
 func (ts *tStorage) GetDailyEvents(ctx context.Context, date time.Time) ([]Event, error) {
 	return []Event{}, nil
 }

@@ -1,4 +1,4 @@
-package main
+package versioncmd
 
 import (
 	"encoding/json"
@@ -28,7 +28,7 @@ func printVersion() {
 	}
 }
 
-var versionCmd = &cobra.Command{
+var VersionCmd = &cobra.Command{
 	Use:   "version",
 	Short: "App version",
 	Run: func(cmd *cobra.Command, args []string) {
