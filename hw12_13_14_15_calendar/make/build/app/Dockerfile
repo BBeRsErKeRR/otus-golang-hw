@@ -1,29 +1,26 @@
-
-ARG bin_file /opt/calendar/calendar-app
-ARG src_main cmd/calendar/*
-ARG src_config ./configs/config.toml
-
-# Собираем в гошке
 FROM golang:1.19 as build
 
-ENV BIN_FILE=${bin_file} \
+ARG MAIN_SRC
+ARG BIN_FILE
+ENV BIN_FILE=${BIN_FILE} \
+    MAIN_SRC=${MAIN_SRC} \
     CODE_DIR=/go/src/
 
 WORKDIR ${CODE_DIR}
 
-# Кэшируем слои с модулями
-COPY go.mod .
-COPY go.sum .
+COPY go.mod go.sum ./
 RUN go mod download
 
-COPY . ${CODE_DIR}
+COPY . ./
 
 # Собираем статический бинарник Go (без зависимостей на Си API),
 # иначе он не будет работать в alpine образе.
 ARG LDFLAGS
+ARG BIN_FILE
+ARG MAIN_SRC
 RUN CGO_ENABLED=0 go build \
-        -ldflags "$LDFLAGS" \
-        -o ${BIN_FILE} ${src_main}
+    -ldflags "$LDFLAGS" \
+    -o ${BIN_FILE} ${MAIN_SRC}
 
 # На выходе тонкий образ
 FROM alpine:3.9
@@ -32,10 +29,12 @@ LABEL ORGANIZATION="OTUS Online Education"
 LABEL SERVICE="calendar"
 LABEL MAINTAINERS="student@otus.ru"
 
-ENV BIN_FILE=${bin_file}
+ARG BIN_FILE
+ENV BIN_FILE=${BIN_FILE}
 COPY --from=build ${BIN_FILE} ${BIN_FILE}
 
+ARG CONFIG_SRC
 ENV CONFIG_FILE /etc/calendar/config.toml
-COPY ${src_config} ${CONFIG_FILE}
+COPY ${CONFIG_SRC} ${CONFIG_FILE}
 
-CMD ${BIN_FILE} -config ${CONFIG_FILE}
+CMD ${BIN_FILE} --config ${CONFIG_FILE}

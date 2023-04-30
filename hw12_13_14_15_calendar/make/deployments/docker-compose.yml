@@ -3,7 +3,7 @@ services:
 #===============STORAGE==============#
   calendar_postgres:
     image: postgres:14
-    hostname: control_camunda_postgres
+    container_name: calendar-postgres
     environment:
       POSTGRES_PASSWORD: ${DB_PASSWORD}
       POSTGRES_USER: ${DB_USERNAME}
@@ -13,7 +13,7 @@ services:
     volumes:
       - postgres_data:/var/lib/postgresql
     healthcheck:
-      test: [ "CMD-SHELL", "pg_isready -d ${POSTGRES_DB} -U ${POSTGRES_USER}" ]
+      test: [ "CMD-SHELL", "pg_isready -d ${DB_DATABASE} -U ${DB_USERNAME}" ]
       timeout: 45s
       interval: 10s
       retries: 10
@@ -24,6 +24,7 @@ services:
 #===========MESSAGE QUEUE============#
   calendar_mq:
     image: rabbitmq:3-management
+    container_name: calendar-mq
     ports:
       - "5672:5672"
       - "15672:15672"
@@ -39,8 +40,8 @@ services:
 #====================================#
   migrator:
     environment:
-        GOOSE_DRIVER: "postgres"
-        GOOSE_DBSTRING: ${DB_USERNAME}:${DB_PASSWORD}@calendar_postgres:5432/${DB_DATABASE}?sslmode=disable
+      GOOSE_DRIVER: postgres
+      GOOSE_DBSTRING: "postgres://${DB_USERNAME}:${DB_PASSWORD}@${DB_HOST}:5432/${DB_DATABASE}?sslmode=disable" 
     depends_on:
         calendar_postgres:
           condition: service_healthy
@@ -48,20 +49,23 @@ services:
   calendar:
     environment:
       APP_DATABASE_PASSWORD: ${DB_PASSWORD}
-      APP_DATABASE_HOST: calendar_postgres
+      APP_DATABASE_HOST: ${DB_HOST}
     depends_on:
       calendar_postgres:
         condition: service_healthy
 
   sender:
+    environment:
+      RMQ_HOST: calendar-mq
     depends_on:
       calendar_mq:
         condition: service_healthy
   
   scheduler:
     environment:
-      APP_DATABASE_PASSWORD: ${DB_PASSWORD}
-      APP_DATABASE_HOST: calendar_postgres
+      DATABASE_PASSWORD: ${DB_PASSWORD}
+      DATABASE_HOST: ${DB_HOST}
+      RMQ_HOST: calendar-mq
     depends_on:
       calendar_postgres:
         condition: service_healthy

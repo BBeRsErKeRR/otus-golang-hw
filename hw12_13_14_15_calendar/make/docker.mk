@@ -7,15 +7,24 @@ DOCKER_MAKE_DIR:=$(dir $(DOCKER_MAKE_PATH))
 GIT_HASH := $(shell git log --format="%h" -n 1)
 LDFLAGS := -X main.release="develop" -X main.buildDate=$(shell date -u +%Y-%m-%dT%H:%M:%S) -X main.gitHash=$(GIT_HASH)
 DOCKER_IMG="calendar:develop"
-DOCKER_BUILDKIT?=0
-COMPOSE_DOCKER_CLI_BUILD?=0
+DOCKER_BUILDKIT?=1
+COMPOSE_DOCKER_CLI_BUILD?=1
 export
 
 define __COMPOSE_CMD
 source $(DOCKER_MAKE_DIR).env && \
 		docker-compose -f $(DOCKER_MAKE_DIR)deployments/docker-compose.app.yml \
-		-f $(DOCKER_MAKE_DIR)deployments/docker-compose.yml -p CALENDAR
+		-f $(DOCKER_MAKE_DIR)deployments/docker-compose.yml -p calendar
 endef
+
+bi:
+	docker build \
+		--build-arg=LDFLAGS="$(LDFLAGS)" \
+		--build-arg=BIN_FILE="/opt/calendar/calendar-app" \
+		--build-arg=MAIN_SRC="cmd/calendar/*" \
+		--build-arg=CONFIG_SRC="configs/config.toml" \
+		-t ${DOCKER_REGISTRY}calendar_app \
+		-f ${DOCKER_MAKE_DIR}/build/app/Dockerfile ${DOCKER_CONTEXT_PATH}
 
 .PHONY: run-img
 build-img:  ## Create docker image
