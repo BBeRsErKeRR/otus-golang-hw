@@ -7,18 +7,19 @@ DOCKER_MAKE_DIR:=$(dir $(DOCKER_MAKE_PATH))
 GIT_HASH := $(shell git log --format="%h" -n 1)
 LDFLAGS := -X main.release="develop" -X main.buildDate=$(shell date -u +%Y-%m-%dT%H:%M:%S) -X main.gitHash=$(GIT_HASH)
 DOCKER_IMG="calendar:develop"
+DOCKER_BUILDKIT?=0
+COMPOSE_DOCKER_CLI_BUILD?=0
+export
 
 define __COMPOSE_CMD
 source $(DOCKER_MAKE_DIR).env && \
-		docker-compose -f $(DOCKER_MAKE_DIR)deployments/docker-compose.yml -p CALENDAR
+		docker-compose -f $(DOCKER_MAKE_DIR)deployments/docker-compose.app.yml \
+		-f $(DOCKER_MAKE_DIR)deployments/docker-compose.yml -p CALENDAR
 endef
 
 .PHONY: run-img
 build-img:  ## Create docker image
-	docker build \
-		--build-arg=LDFLAGS="$(LDFLAGS)" \
-		-t $(DOCKER_IMG) \
-		-f $(DOCKER_MAKE_DIR)/build/Dockerfile .
+	docker-compose -f $(DOCKER_MAKE_DIR)deployments/docker-compose.app.yml build
 
 .PHONY: build-img
 run-img: build-img  ## Run  app container
@@ -87,3 +88,11 @@ mq-logs: ## See dev postgress logs
 .PHONY: postgres-attach
 mq-attach: ## Attach to psql container
 	$(MAKE) _SERVICE=calendar_mq service-attach
+
+
+.PHONY: up
+up:	build-img # Up all dev environment
+	@$(__COMPOSE_CMD) up -d
+
+.PHONY: down # Down all dev environment
+down: services-down

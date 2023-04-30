@@ -11,21 +11,64 @@ services:
     ports:
       - "5532:5432"
     volumes:
-      - postgres_data:/bitnami/postgresql
+      - postgres_data:/var/lib/postgresql
+    healthcheck:
+      test: [ "CMD-SHELL", "pg_isready -d ${POSTGRES_DB} -U ${POSTGRES_USER}" ]
+      timeout: 45s
+      interval: 10s
+      retries: 10
     networks:
       calendar:
 #====================================#
 
-#===============MESSAGE QUEUE==============#
+#===========MESSAGE QUEUE============#
   calendar_mq:
     image: rabbitmq:3-management
     ports:
       - "5672:5672"
       - "15672:15672"
+    healthcheck:
+      test: [ "CMD", "rabbitmqctl", "status" ]
+      interval: 5s
+      timeout: 20s
+      retries: 5
+    restart: on-failure
     networks:
       calendar:
 #====================================#
+#====================================#
+  migrator:
+    environment:
+        GOOSE_DRIVER: "postgres"
+        GOOSE_DBSTRING: ${DB_USERNAME}:${DB_PASSWORD}@calendar_postgres:5432/${DB_DATABASE}?sslmode=disable
+    depends_on:
+        calendar_postgres:
+          condition: service_healthy
 
+  calendar:
+    environment:
+      APP_DATABASE_PASSWORD: ${DB_PASSWORD}
+      APP_DATABASE_HOST: calendar_postgres
+    depends_on:
+      calendar_postgres:
+        condition: service_healthy
+
+  sender:
+    depends_on:
+      calendar_mq:
+        condition: service_healthy
+  
+  scheduler:
+    environment:
+      APP_DATABASE_PASSWORD: ${DB_PASSWORD}
+      APP_DATABASE_HOST: calendar_postgres
+    depends_on:
+      calendar_postgres:
+        condition: service_healthy
+      calendar_mq:
+        condition: service_healthy
+
+#====================================#
 networks:
   calendar:
     driver: bridge

@@ -9,7 +9,7 @@ SHELLOPTS:=$(if $(SHELLOPTS),$(SHELLOPTS):)pipefail:errexit
 BIN_CALENDAR := "./bin/calendar"
 BIN_SCHEDULER := "./bin/scheduler"
 BIN_SENDER := "./bin/sender"
-
+DOCKER_CONTEXT_PATH:=$(shell pwd)
 
 help: ## Display this help
 	@IFS=$$'\n'; for line in `grep -h -E '^[a-zA-Z_#-]+:?.*?## .*$$' $(MAKEFILE_LIST)`; do if [ "$${line:0:2}" = "##" ]; then \
