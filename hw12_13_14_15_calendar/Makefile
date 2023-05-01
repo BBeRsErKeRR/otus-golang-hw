@@ -86,3 +86,8 @@ migration_status: ## Current migrations status
 .PHONY: build run version test lint help coverage goose
 
 include make/docker.mk
+
+integration-t:
+	sleep 3 && ginkgo ./pkg/tests
+
+integration-tests: down up integration-t down
