@@ -21,10 +21,10 @@ var _ = Describe("Calendar GRPC", func() {
 	now := time.Now()
 	weekAgo := now.AddDate(0, 0, -7)
 	monthAgo := now.AddDate(0, -1, 1)
-	yearAgo := now.AddDate(-1, 0, -1)
+	yearAgo := now.AddDate(-1, 0, -2)
 	halfYearAgo := now.AddDate(0, -6, 1)
 
-	conn, err := grpc.DialContext(ctx, "0.0.0.0:5080",
+	conn, err := grpc.DialContext(ctx, grpcAddr,
 		grpc.WithTransportCredentials(insecure.NewCredentials()))
 	require.NoError(GinkgoT(), err)
 	client := v1grpc.NewEventServiceClient(conn)
@@ -168,7 +168,7 @@ var _ = Describe("Calendar GRPC", func() {
 	Describe("DropPublishAndSendEvent", func() {
 		It("success result", func() {
 			mq := rmq.MessageQueue{}
-			err := mq.Connect("amqp://guest:guest@localhost:5672/")
+			err := mq.Connect(amqpAddr)
 			require.NoError(GinkgoT(), err)
 			defer mq.Close()
 
@@ -193,7 +193,7 @@ var _ = Describe("Calendar GRPC", func() {
 			)
 			require.NoError(GinkgoT(), err)
 
-			ticker := time.NewTicker(3 * time.Minute)
+			ticker := time.NewTicker(sleepDuration)
 			defer ticker.Stop()
 			results := make(chan string)
 			go func() {

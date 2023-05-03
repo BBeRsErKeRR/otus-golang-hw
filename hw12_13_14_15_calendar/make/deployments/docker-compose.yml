@@ -66,6 +66,7 @@ services:
       DATABASE_PASSWORD: ${DB_PASSWORD}
       DATABASE_HOST: ${DB_HOST}
       RMQ_HOST: calendar-mq
+      DURATION: ${DURATION:-120s}
     depends_on:
       calendar_postgres:
         condition: service_healthy
