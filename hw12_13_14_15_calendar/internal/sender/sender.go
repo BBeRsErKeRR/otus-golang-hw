@@ -26,19 +26,27 @@ func New(logger logger.Logger, c consumer.Consumer) *App {
 
 func (a *App) Consume(ctx context.Context) error {
 	f := func(ctx context.Context, msg []byte) {
+		var encodedStatus []byte
 		eventDto := &storage.EventDTO{}
-		if err := json.Unmarshal(msg, eventDto); err != nil {
+		err := json.Unmarshal(msg, eventDto)
+		if err == nil {
+			a.logger.Debug(string(msg))
+			notification := fmt.Sprintf("Send new notification from event '%s' to user '%v': %s -> %s",
+				eventDto.Title,
+				eventDto.UserID,
+				eventDto.Date.Format(time.RFC822),
+				eventDto.EndDate.Format(time.RFC822),
+			)
+			a.logger.Info(notification)
+			encodedStatus = []byte(fmt.Sprintf("Successful send %v", eventDto.Title))
+		} else {
 			a.logger.Error("event notification unmarshal failed", zap.Error(err))
-			return
+			encodedStatus = []byte(fmt.Sprintf("Unmarshal error: %v", err))
 		}
-		a.logger.Debug(string(msg))
-		notification := fmt.Sprintf("Send new notification from event '%s' to user '%v': %s -> %s",
-			eventDto.Title,
-			eventDto.UserID,
-			eventDto.Date.Format(time.RFC822),
-			eventDto.EndDate.Format(time.RFC822),
-		)
-		a.logger.Info(notification)
+
+		if err := a.c.PublishStatus(ctx, encodedStatus); err != nil {
+			a.logger.Error("fail publish event", zap.Error(err))
+		}
 	}
 	return a.c.Consume(ctx, f)
 }

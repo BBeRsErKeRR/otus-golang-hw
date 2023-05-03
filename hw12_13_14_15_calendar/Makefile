@@ -88,6 +88,7 @@ migration_status: ## Current migrations status
 include make/docker.mk
 
 integration-t:
-	sleep 3 && ginkgo ./pkg/tests
+	sleep 3 && ginkgo -v ./pkg/tests
 
-integration-tests: down up integration-t down
+integration-tests: down up integration-t
+	$(MAKE) down

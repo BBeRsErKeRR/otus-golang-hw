@@ -5,6 +5,7 @@ import (
 	"time"
 
 	v1grpc "github.com/BBeRsErKeRR/otus-golang-hw/hw12_13_14_15_calendar/api/v1/grpc"
+	"github.com/BBeRsErKeRR/otus-golang-hw/hw12_13_14_15_calendar/pkg/rmq"
 	"github.com/brianvoe/gofakeit/v6"
 	. "github.com/onsi/ginkgo/v2"
 	"github.com/stretchr/testify/require"
@@ -20,7 +21,7 @@ var _ = Describe("Calendar GRPC", func() {
 	now := time.Now()
 	weekAgo := now.AddDate(0, 0, -7)
 	monthAgo := now.AddDate(0, -1, 1)
-	yearAgo := now.AddDate(-1, 0, 1)
+	yearAgo := now.AddDate(-1, 0, -1)
 	halfYearAgo := now.AddDate(0, -6, 1)
 
 	conn, err := grpc.DialContext(ctx, "0.0.0.0:5080",
@@ -35,7 +36,7 @@ var _ = Describe("Calendar GRPC", func() {
 			EndDate:    timestamppb.New(now.Add(2 * time.Hour)),
 			Desc:       gofakeit.Phrase(),
 			UserId:     gofakeit.UUID(),
-			RemindDate: timestamppb.New(now.Add(1 * time.Hour)),
+			RemindDate: timestamppb.New(now.Add(1 * time.Minute)),
 		}
 
 		weekAgoEvent = &v1grpc.EventRequestValue{
@@ -158,6 +159,67 @@ var _ = Describe("Calendar GRPC", func() {
 
 			events, err := client.GetDailyEvents(ctx, &v1grpc.EventsRequest{
 				Date: timestamppb.New(now),
+			})
+			require.NoError(GinkgoT(), err)
+			require.Equal(GinkgoT(), 0, len(events.GetEvents()))
+		})
+	})
+
+	Describe("DropPublishAndSendEvent", func() {
+		It("success result", func() {
+			mq := rmq.MessageQueue{}
+			err := mq.Connect("amqp://guest:guest@localhost:5672/")
+			require.NoError(GinkgoT(), err)
+			defer mq.Close()
+
+			_, err = client.UpdateEvent(ctx, &v1grpc.UpdateRequest{
+				Id: currentEventRes.Id,
+				Event: &v1grpc.EventRequestValue{
+					Date:       timestamppb.New(now),
+					EndDate:    timestamppb.New(now.AddDate(0, 0, 1)),
+					RemindDate: timestamppb.New(now.Add(1 * time.Minute)),
+				},
+			})
+			require.NoError(GinkgoT(), err)
+
+			msgs, err := mq.Channel.Consume(
+				"status",
+				"calendar",
+				true,
+				false,
+				false,
+				false,
+				nil,
+			)
+			require.NoError(GinkgoT(), err)
+
+			ticker := time.NewTicker(3 * time.Minute)
+			defer ticker.Stop()
+			results := make(chan string)
+			go func() {
+				for {
+					select {
+					case msg, ok := <-msgs:
+						if !ok {
+							return
+						}
+						results <- string(msg.Body)
+						return
+					case <-ctx.Done():
+						return
+					}
+				}
+			}()
+
+			select {
+			case <-ticker.C:
+			case data := <-results:
+				require.Contains(GinkgoT(), data, "Successful send")
+			case <-ctx.Done():
+			}
+
+			events, err := client.GetDailyEvents(ctx, &v1grpc.EventsRequest{
+				Date: timestamppb.New(yearAgo),
 			})
 			require.NoError(GinkgoT(), err)
 			require.Equal(GinkgoT(), 0, len(events.GetEvents()))
