@@ -4,12 +4,17 @@ import (
 	"context"
 	"fmt"
 	"os/signal"
+	"reflect"
 	"syscall"
 	"time"
+	"unsafe"
 
 	v1grpc "github.com/BBeRsErKeRR/otus-golang-hw/hw12_13_14_15_calendar/api/v1/grpc"
+	"github.com/BBeRsErKeRR/otus-golang-hw/hw12_13_14_15_calendar/internal/storage"
+	internalsql "github.com/BBeRsErKeRR/otus-golang-hw/hw12_13_14_15_calendar/internal/storage/sql"
 	"github.com/BBeRsErKeRR/otus-golang-hw/hw12_13_14_15_calendar/pkg/rmq"
 	"github.com/brianvoe/gofakeit/v6"
+	"github.com/jmoiron/sqlx"
 	. "github.com/onsi/ginkgo/v2"
 	"github.com/stretchr/testify/require"
 	"google.golang.org/grpc"
@@ -17,7 +22,11 @@ import (
 	"google.golang.org/protobuf/types/known/timestamppb"
 )
 
-var _ = Describe("Calendar GRPC", func() {
+func getUnexportedField(field reflect.Value) interface{} {
+	return reflect.NewAt(field.Type(), unsafe.Pointer(field.UnsafeAddr())).Elem().Interface()
+}
+
+var _ = Describe("Calendar GRPC", Ordered, func() {
 	var currentEvent, weekAgoEvent, monthAgoEvent, yearAgoEvent *v1grpc.EventRequestValue
 	var currentEventRes *v1grpc.EventIDResponse
 	ctx, cancel := signal.NotifyContext(context.Background(), syscall.SIGINT, syscall.SIGTERM, syscall.SIGHUP)
@@ -30,9 +39,27 @@ var _ = Describe("Calendar GRPC", func() {
 	conn, err := grpc.DialContext(ctx, grpcAddr,
 		grpc.WithTransportCredentials(insecure.NewCredentials()))
 	require.NoError(GinkgoT(), err)
+	config := storage.Config{
+		Host:     "localhost",
+		Port:     "5532",
+		Storage:  "sql",
+		Driver:   "postgres",
+		Ssl:      "disable",
+		Database: "calendar",
+		User:     "calendar",
+		Password: "passwd",
+	}
+	st := internalsql.New(&config)
+	require.NoError(GinkgoT(), st.Connect(ctx))
+	field := reflect.Indirect(reflect.ValueOf(st)).FieldByName("db")
+	db := getUnexportedField(field).(*sqlx.DB)
+
 	client := v1grpc.NewEventServiceClient(conn)
 
-	BeforeEach(func() {
+	BeforeAll(func() {
+		_, err := db.Exec(`TRUNCATE TABLE events`)
+		require.NoError(GinkgoT(), err)
+
 		currentEvent = &v1grpc.EventRequestValue{
 			Title:      gofakeit.Hobby(),
 			Date:       timestamppb.New(now),
@@ -196,7 +223,7 @@ var _ = Describe("Calendar GRPC", func() {
 			)
 			require.NoError(GinkgoT(), err)
 
-			ticker := time.NewTicker(sleepDuration)
+			ticker := time.NewTicker(sleepDuration + 5*time.Second)
 			defer ticker.Stop()
 			results := make(chan string)
 			go func() {

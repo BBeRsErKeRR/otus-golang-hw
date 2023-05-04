@@ -88,9 +88,9 @@ migration_status: ## Current migrations status
 include make/docker.mk
 
 __integration-t:
-	sleep 3 && ginkgo -v ./pkg/tests -- --scheduler-duration="$(DURATION)"
+	sleep 3 && ginkgo --repeat=10 -p -v ./pkg/tests -- --scheduler-duration="$(DURATION)"
 
-integration-tests: DURATION=20s
+integration-tests: DURATION=5s
 
 integration-tests: down up __integration-t ## Execute smoke-tests
 	$(MAKE) down
