@@ -102,6 +102,12 @@ func (h *Handler) UpdateEvent(w http.ResponseWriter, r *http.Request) {
 		h.sendError(err, http.StatusBadRequest, w)
 		return
 	}
+
+	if len(reqBody) == 0 {
+		h.sendError(ErrBadArgs, http.StatusBadRequest, w)
+		return
+	}
+
 	var data storage.EventDTO
 	err = json.Unmarshal(reqBody, &data)
 	if err != nil {
@@ -140,6 +146,9 @@ func (h *Handler) getDateParams(r *http.Request) (time.Time, error) {
 	reqBody, err := io.ReadAll(r.Body)
 	if err != nil {
 		return res, err
+	}
+	if len(reqBody) == 0 {
+		return res, ErrBadArgs
 	}
 	var data DateRequest
 	err = json.Unmarshal(reqBody, &data)

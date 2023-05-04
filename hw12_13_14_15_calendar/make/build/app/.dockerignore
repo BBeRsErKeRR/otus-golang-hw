@@ -1,6 +1,0 @@
-bin/*
-docs/*
-*.md
-make/*
-Makefile
-coverprofile.out

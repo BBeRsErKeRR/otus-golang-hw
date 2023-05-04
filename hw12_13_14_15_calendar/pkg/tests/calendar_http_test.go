@@ -2,6 +2,7 @@ package integration_test
 
 import (
 	"bytes"
+	"fmt"
 	"net/http"
 	"time"
 
@@ -78,7 +79,7 @@ var _ = Describe("Calendar HTTP", func() {
 	})
 	Describe("Id Error", func() {
 		It("del bad id", func() {
-			req, err := http.NewRequest("DELETE", rootHTTPURL+"/v1/event/222", nil)
+			req, err := http.NewRequest(http.MethodDelete, rootHTTPURL+"/v1/event/222", nil)
 			require.NoError(GinkgoT(), err)
 			resp, err := client.Do(req)
 			require.NoError(GinkgoT(), err)
@@ -89,11 +90,11 @@ var _ = Describe("Calendar HTTP", func() {
 			require.Equal(GinkgoT(), http.StatusBadRequest, resp.StatusCode)
 			err = json.NewDecoder(resp.Body).Decode(&response)
 			require.NoError(GinkgoT(), err)
-			require.NotEmpty(GinkgoT(), response.Error)
+			require.Equal(GinkgoT(), "bad event id", response.Error)
 		})
 
-		It("update bad id", func() {
-			req, err := http.NewRequest("PUT", rootHTTPURL+"/v1/event/222", nil)
+		It("update bad args", func() {
+			req, err := http.NewRequest(http.MethodPut, rootHTTPURL+"/v1/event/222", nil)
 			require.NoError(GinkgoT(), err)
 			resp, err := client.Do(req)
 			require.NoError(GinkgoT(), err)
@@ -102,9 +103,29 @@ var _ = Describe("Calendar HTTP", func() {
 				Error string `json:"error"`
 			}
 			require.Equal(GinkgoT(), http.StatusBadRequest, resp.StatusCode)
+			// b, _ := io.ReadAll(resp.Body)
+			// fmt.Println(string(b))
 			err = json.NewDecoder(resp.Body).Decode(&response)
 			require.NoError(GinkgoT(), err)
-			require.NotEmpty(GinkgoT(), response.Error)
+			require.Equal(GinkgoT(), "bad args", response.Error)
+			fmt.Println(response)
+		})
+		It("update bad id", func() {
+			req, err := http.NewRequest(http.MethodPut, rootHTTPURL+"/v1/event/222", bytes.NewBuffer([]byte("{}")))
+			require.NoError(GinkgoT(), err)
+			resp, err := client.Do(req)
+			require.NoError(GinkgoT(), err)
+			defer resp.Body.Close()
+			var response struct {
+				Error string `json:"error"`
+			}
+			require.Equal(GinkgoT(), http.StatusBadRequest, resp.StatusCode)
+			// b, _ := io.ReadAll(resp.Body)
+			// fmt.Println(string(b))
+			err = json.NewDecoder(resp.Body).Decode(&response)
+			require.NoError(GinkgoT(), err)
+			require.Equal(GinkgoT(), "bad event id", response.Error)
+			fmt.Println(response)
 		})
 	})
 })

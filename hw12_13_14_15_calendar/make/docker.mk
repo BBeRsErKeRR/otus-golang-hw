@@ -9,6 +9,7 @@ LDFLAGS := -X main.release="develop" -X main.buildDate=$(shell date -u +%Y-%m-%d
 DOCKER_IMG="calendar:develop"
 DOCKER_BUILDKIT?=1
 COMPOSE_DOCKER_CLI_BUILD?=1
+DOCKER_REGISTRY?=
 export
 
 define __COMPOSE_CMD
@@ -101,7 +102,7 @@ mq-attach: ## Attach to psql container
 
 .PHONY: up
 up:	build-img # Up all dev environment
-	@$(__COMPOSE_CMD) up -d
+	DURATION=$(or $(DURATION),120s) $(__COMPOSE_CMD) up -d
 
 .PHONY: down # Down all dev environment
 down: services-down

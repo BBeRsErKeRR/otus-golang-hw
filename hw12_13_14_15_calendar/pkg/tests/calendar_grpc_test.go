@@ -2,6 +2,9 @@ package integration_test
 
 import (
 	"context"
+	"fmt"
+	"os/signal"
+	"syscall"
 	"time"
 
 	v1grpc "github.com/BBeRsErKeRR/otus-golang-hw/hw12_13_14_15_calendar/api/v1/grpc"
@@ -17,7 +20,7 @@ import (
 var _ = Describe("Calendar GRPC", func() {
 	var currentEvent, weekAgoEvent, monthAgoEvent, yearAgoEvent *v1grpc.EventRequestValue
 	var currentEventRes *v1grpc.EventIDResponse
-	ctx := context.Background()
+	ctx, cancel := signal.NotifyContext(context.Background(), syscall.SIGINT, syscall.SIGTERM, syscall.SIGHUP)
 	now := time.Now()
 	weekAgo := now.AddDate(0, 0, -7)
 	monthAgo := now.AddDate(0, -1, 1)
@@ -68,6 +71,10 @@ var _ = Describe("Calendar GRPC", func() {
 	})
 
 	Describe("CreateEvent", func() {
+		It("add year ago event", func() {
+			_, err := client.CreateEvent(ctx, yearAgoEvent)
+			require.NoError(GinkgoT(), err)
+		})
 		It("add now event", func() {
 			var err error
 			currentEventRes, err = client.CreateEvent(ctx, currentEvent)
@@ -79,10 +86,6 @@ var _ = Describe("Calendar GRPC", func() {
 		})
 		It("add month ago event", func() {
 			_, err := client.CreateEvent(ctx, monthAgoEvent)
-			require.NoError(GinkgoT(), err)
-		})
-		It("add year ago event", func() {
-			_, err := client.CreateEvent(ctx, yearAgoEvent)
 			require.NoError(GinkgoT(), err)
 		})
 	})
@@ -213,6 +216,7 @@ var _ = Describe("Calendar GRPC", func() {
 
 			select {
 			case <-ticker.C:
+				cancel()
 			case data := <-results:
 				require.Contains(GinkgoT(), data, "Successful send")
 			case <-ctx.Done():
@@ -222,7 +226,7 @@ var _ = Describe("Calendar GRPC", func() {
 				Date: timestamppb.New(yearAgo),
 			})
 			require.NoError(GinkgoT(), err)
-			require.Equal(GinkgoT(), 0, len(events.GetEvents()))
+			require.Equal(GinkgoT(), 0, len(events.GetEvents()), fmt.Sprintf("Expected 0, found: %v", events.GetEvents()))
 		})
 	})
 })

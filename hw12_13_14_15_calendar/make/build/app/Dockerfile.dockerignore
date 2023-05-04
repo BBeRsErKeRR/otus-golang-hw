@@ -4,3 +4,4 @@ docs/*
 make/*
 Makefile
 coverprofile.out
+pkg/tests/*

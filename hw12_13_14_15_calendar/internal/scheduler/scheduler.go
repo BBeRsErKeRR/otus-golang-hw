@@ -66,11 +66,11 @@ func (a *App) Run(ctx context.Context) error {
 	defer a.logger.Info("Stopping scheduler")
 	for {
 		go func() {
-			a.PublishEvents(ctx)
 			err := a.Obsolescence(ctx)
 			if err != nil {
 				a.logger.Error(fmt.Sprintf("fail delete old events %s", err))
 			}
+			a.PublishEvents(ctx)
 			a.logger.Info(fmt.Sprintf("Next operation start after %s", a.duration))
 		}()
 

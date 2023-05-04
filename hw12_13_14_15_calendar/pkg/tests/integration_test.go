@@ -18,7 +18,7 @@ func init() {
 	flag.StringVar(&rootHTTPURL, "http-addr", "http://localhost:5000", "Address of the http server to smoke-check")
 	flag.StringVar(&grpcAddr, "grpc-addr", "0.0.0.0:5080", "Address of the grpc server to smoke-check")
 	flag.StringVar(&amqpAddr, "mq-addr", "amqp://guest:guest@localhost:5672/", "Address of the mq server to smoke-check")
-	flag.DurationVar(&sleepDuration, "scheduler-duration", 2*time.Minute, "Scheduler await timeout to smoke-check")
+	flag.DurationVar(&sleepDuration, "scheduler-duration", time.Second, "Scheduler await timeout to smoke-check")
 }
 
 func TestIntegrationTests(t *testing.T) {

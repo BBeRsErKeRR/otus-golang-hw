@@ -50,7 +50,7 @@ wait-for-db:
 	sleep 5
 
 integration: postgres-up wait-for-db migrate ## Execute integration tests
-	go test --tags=$@ -race ./internal/...
+	go test --tags=$@ -race ./internal/... ./api/...
 
 
 coverage: postgres-up wait-for-db migrate ## test coverage
@@ -88,7 +88,7 @@ migration_status: ## Current migrations status
 include make/docker.mk
 
 __integration-t:
-	sleep 3 && ginkgo -v ./pkg/tests --scheduler-duration="$(DURATION)"
+	sleep 3 && ginkgo -v ./pkg/tests -- --scheduler-duration="$(DURATION)"
 
 integration-tests: DURATION=20s
 
