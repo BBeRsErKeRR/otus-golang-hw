@@ -54,7 +54,7 @@ func TestStorage(t *testing.T) {
 				UserID:     uuid.New().String(),
 				Date:       time.Now(),
 				EndDate:    time.Now().Add(3 * time.Hour),
-				RemindDate: time.Now().Add(2 * time.Hour),
+				RemindDate: time.Now().Add(-2 * time.Hour),
 			},
 			Action: func(ctx context.Context, st *Storage, event storage.Event, db *sqlx.DB) error {
 				if _, err := db.Exec(`TRUNCATE TABLE events`); err != nil {
@@ -105,31 +105,42 @@ func TestStorage(t *testing.T) {
 		},
 		{
 			Name: "some get check",
+			Event: storage.Event{
+				Title:      "some event 5",
+				Desc:       "this is the test event 5",
+				UserID:     uuid.New().String(),
+				Date:       time.Now().AddDate(0, 0, 14),
+				EndDate:    time.Now().AddDate(0, 0, 15),
+				RemindDate: time.Now().AddDate(0, 0, 13),
+			},
 			Action: func(ctx context.Context, st *Storage, event storage.Event, db *sqlx.DB) error {
-				if _, err := db.Exec(query); err != nil {
+				testDate := time.Now().Add(-4 * time.Minute)
+
+				_, err := st.CreateEvent(ctx, event)
+				if err != nil {
 					return err
 				}
-				testDate := time.Now().Add(-4 * time.Minute)
+
 				dayEvents, err := st.GetDailyEvents(ctx, testDate)
 				if err != nil {
 					return err
 				}
-				if len(dayEvents) != 1 {
-					return fmt.Errorf("failed check date '%v' dayEvents '%v' found '%v'", testDate, 1, dayEvents)
+				if len(dayEvents) != 0 {
+					return fmt.Errorf("GetDailyEvents. failed check date '%s' dayEvents '%v' found '%v'", testDate, 0, dayEvents)
 				}
 				weekEvents, err := st.GetWeeklyEvents(ctx, testDate)
 				if err != nil {
 					return err
 				}
-				if len(weekEvents) != 2 {
-					return fmt.Errorf("failed check date '%v' weekEvents '%v' found '%v'", testDate, 2, weekEvents)
+				if len(weekEvents) != 1 {
+					return fmt.Errorf("GetWeeklyEvents. failed check date '%s' weekEvents '%v' found '%v'", testDate, 1, weekEvents)
 				}
 				monthEvents, err := st.GetMonthlyEvents(ctx, testDate)
 				if err != nil {
 					return err
 				}
-				if len(monthEvents) != 3 {
-					return fmt.Errorf("failed check date '%v' monthEvents '%v' found '%v'", testDate, 3, monthEvents)
+				if len(monthEvents) != 2 {
+					return fmt.Errorf("GetMonthlyEvents. failed check date '%s' monthEvents '%v' found '%v'", testDate, 2, monthEvents)
 				}
 				return nil
 			},
@@ -157,6 +168,34 @@ func TestStorage(t *testing.T) {
 				_, err = st.CreateEvent(ctx, event)
 				if err != nil {
 					return err
+				}
+				return nil
+			},
+		},
+		{
+			Name: "check kindReminder",
+			Event: storage.Event{
+				Title:      "some event 3",
+				Desc:       "this is the test event 3",
+				UserID:     uuid.New().String(),
+				Date:       time.Now().Add(4 * time.Minute),
+				EndDate:    time.Now().Add(4 * time.Hour),
+				RemindDate: time.Now().Add(-3 * time.Minute),
+			},
+			Action: func(ctx context.Context, st *Storage, event storage.Event, db *sqlx.DB) error {
+				if _, err := db.Exec(`TRUNCATE TABLE events`); err != nil {
+					return err
+				}
+				_, err := st.CreateEvent(ctx, event)
+				if err != nil {
+					return err
+				}
+				events, err := st.GetKindReminder(ctx, time.Now().Add(-5*time.Second))
+				if err != nil {
+					return err
+				}
+				if len(events) == 0 {
+					return errEmpty
 				}
 				return nil
 			},

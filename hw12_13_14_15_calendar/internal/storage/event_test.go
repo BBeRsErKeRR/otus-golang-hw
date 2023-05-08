@@ -32,6 +32,10 @@ func (ts *tStorage) DeleteEventsBeforeDate(ctx context.Context, date time.Time) 
 	return nil
 }
 
+func (ts *tStorage) GetKindReminder(ctx context.Context, date time.Time) ([]Event, error) {
+	return []Event{}, nil
+}
+
 func (ts *tStorage) GetEventsByPeriod(ctx context.Context, start, date time.Time) ([]Event, error) {
 	return []Event{}, nil
 }

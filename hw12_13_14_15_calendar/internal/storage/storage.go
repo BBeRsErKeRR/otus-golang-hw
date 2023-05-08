@@ -26,6 +26,7 @@ type Storage interface {
 	GetWeeklyEvents(context.Context, time.Time) ([]Event, error)
 	GetMonthlyEvents(context.Context, time.Time) ([]Event, error)
 	GetEventsByPeriod(context.Context, time.Time, time.Time) ([]Event, error)
+	GetKindReminder(context.Context, time.Time) ([]Event, error)
 	Connect(context.Context) error
 	Close(context.Context) error
 }

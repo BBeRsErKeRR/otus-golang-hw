@@ -177,7 +177,7 @@ func (st *Storage) DeleteEventsBeforeDate(ctx context.Context, date time.Time) e
 	if st.db == nil {
 		return ErrNotInitDB
 	}
-	_, err := st.db.ExecContext(ctx, deleteBeforeEventQ, date.UTC())
+	_, err := st.db.ExecContext(ctx, deleteBeforeEventQ, date)
 	return err
 }
 
@@ -192,7 +192,24 @@ func (st *Storage) GetEventsByPeriod(ctx context.Context, start, end time.Time) 
 	if st.db == nil {
 		return res, ErrNotInitDB
 	}
-	err := st.db.SelectContext(ctx, &res, getEventsByPeriodQ, start.UTC(), end.UTC())
+	err := st.db.SelectContext(ctx, &res, getEventsByPeriodQ, start, end)
+	if err != nil {
+		return res, err
+	}
+	return res, nil
+}
+
+const getReminderEvents = `
+SELECT * FROM events
+WHERE date>=$1 AND remind_date<=$1
+`
+
+func (st *Storage) GetKindReminder(ctx context.Context, date time.Time) ([]storage.Event, error) {
+	var res []storage.Event
+	if st.db == nil {
+		return res, ErrNotInitDB
+	}
+	err := st.db.SelectContext(ctx, &res, getReminderEvents, date)
 	if err != nil {
 		return res, err
 	}

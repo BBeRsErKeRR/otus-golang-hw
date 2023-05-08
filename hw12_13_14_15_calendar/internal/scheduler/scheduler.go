@@ -38,10 +38,9 @@ func (a *App) Obsolescence(ctx context.Context) error {
 }
 
 func (a *App) PublishEvents(ctx context.Context) {
-	startDate := time.Now().Add(-a.duration)
-	endDate := time.Now()
+	date := time.Now().Add(-a.duration)
 
-	events, err := a.sU.GetEventsByPeriod(ctx, startDate, endDate)
+	events, err := a.sU.GetKindReminder(ctx, date)
 	if err != nil {
 		a.logger.Error("fail get event", zap.Error(err))
 	}

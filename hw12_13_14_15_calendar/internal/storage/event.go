@@ -63,7 +63,7 @@ func (u *EventUseCase) validateEvent(e Event) error {
 		return ErrEventEndDate
 	case e.Date.IsZero():
 		return ErrEventDate
-	case !e.RemindDate.IsZero() && (!e.RemindDate.After(e.Date) || !e.RemindDate.Before(e.EndDate)):
+	case !e.RemindDate.IsZero() && e.Date.Before(e.RemindDate):
 		return ErrNotValidRemindDate
 	}
 
@@ -174,6 +174,14 @@ func (u *EventUseCase) GetMonthlyEvents(ctx context.Context, date time.Time) ([]
 	events, err := u.storage.GetMonthlyEvents(ctx, date)
 	if err != nil {
 		return nil, fmt.Errorf("EventUseCase - MonthlyEvents - u.storage.MonthlyEvents: %w", err)
+	}
+	return events, nil
+}
+
+func (u *EventUseCase) GetKindReminder(ctx context.Context, date time.Time) ([]Event, error) {
+	events, err := u.storage.GetKindReminder(ctx, date)
+	if err != nil {
+		return nil, fmt.Errorf("EventUseCase - GetKindReminder - u.storage.GetKindReminder: %w", err)
 	}
 	return events, nil
 }

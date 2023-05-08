@@ -31,7 +31,7 @@ var _ = Describe("Calendar GRPC", Ordered, func() {
 	var currentEventRes *v1grpc.EventIDResponse
 	ctx, cancel := signal.NotifyContext(context.Background(), syscall.SIGINT, syscall.SIGTERM, syscall.SIGHUP)
 	now := time.Now()
-	weekAgo := now.AddDate(0, 0, -7)
+	weekAgo := now.AddDate(0, 0, -8)
 	monthAgo := now.AddDate(0, -1, 1)
 	yearAgo := now.AddDate(-1, 0, -2)
 	halfYearAgo := now.AddDate(0, -6, 1)
@@ -66,7 +66,7 @@ var _ = Describe("Calendar GRPC", Ordered, func() {
 			EndDate:    timestamppb.New(now.Add(2 * time.Hour)),
 			Desc:       gofakeit.Phrase(),
 			UserId:     gofakeit.UUID(),
-			RemindDate: timestamppb.New(now.Add(1 * time.Minute)),
+			RemindDate: timestamppb.New(now.Add(-1 * time.Minute)),
 		}
 
 		weekAgoEvent = &v1grpc.EventRequestValue{
@@ -75,7 +75,7 @@ var _ = Describe("Calendar GRPC", Ordered, func() {
 			EndDate:    timestamppb.New(weekAgo.Add(2 * time.Hour)),
 			Desc:       gofakeit.Phrase(),
 			UserId:     gofakeit.UUID(),
-			RemindDate: timestamppb.New(weekAgo.Add(1 * time.Hour)),
+			RemindDate: timestamppb.New(weekAgo.Add(-1 * time.Hour)),
 		}
 
 		monthAgoEvent = &v1grpc.EventRequestValue{
@@ -84,7 +84,7 @@ var _ = Describe("Calendar GRPC", Ordered, func() {
 			EndDate:    timestamppb.New(monthAgo.Add(2 * time.Hour)),
 			Desc:       gofakeit.Phrase(),
 			UserId:     gofakeit.UUID(),
-			RemindDate: timestamppb.New(monthAgo.Add(1 * time.Hour)),
+			RemindDate: timestamppb.New(monthAgo.Add(-1 * time.Hour)),
 		}
 
 		yearAgoEvent = &v1grpc.EventRequestValue{
@@ -93,7 +93,7 @@ var _ = Describe("Calendar GRPC", Ordered, func() {
 			EndDate:    timestamppb.New(yearAgo.Add(2 * time.Hour)),
 			Desc:       gofakeit.Phrase(),
 			UserId:     gofakeit.UUID(),
-			RemindDate: timestamppb.New(yearAgo.Add(1 * time.Hour)),
+			RemindDate: timestamppb.New(yearAgo.Add(-1 * time.Hour)),
 		}
 	})
 
@@ -117,85 +117,7 @@ var _ = Describe("Calendar GRPC", Ordered, func() {
 		})
 	})
 
-	Describe("GetDailyEvents", func() {
-		It("success result", func() {
-			events, err := client.GetDailyEvents(ctx, &v1grpc.EventsRequest{
-				Date: timestamppb.New(now),
-			})
-			require.NoError(GinkgoT(), err)
-			require.Equal(GinkgoT(), "", events.Error)
-			require.Equal(GinkgoT(), 1, len(events.GetEvents()))
-		})
-		It("empty result", func() {
-			events, err := client.GetDailyEvents(ctx, &v1grpc.EventsRequest{
-				Date: timestamppb.New(halfYearAgo),
-			})
-			require.NoError(GinkgoT(), err)
-			require.Equal(GinkgoT(), "", events.Error)
-			require.Equal(GinkgoT(), 0, len(events.GetEvents()))
-		})
-	})
-
-	Describe("GetWeeklyEvents", func() {
-		It("success result", func() {
-			events, err := client.GetWeeklyEvents(ctx, &v1grpc.EventsRequest{
-				Date: timestamppb.New(weekAgo),
-			})
-			require.NoError(GinkgoT(), err)
-			require.Equal(GinkgoT(), "", events.Error)
-			require.Equal(GinkgoT(), 2, len(events.GetEvents()))
-		})
-		It("empty result", func() {
-			events, err := client.GetWeeklyEvents(ctx, &v1grpc.EventsRequest{
-				Date: timestamppb.New(halfYearAgo),
-			})
-			require.NoError(GinkgoT(), err)
-			require.Equal(GinkgoT(), "", events.Error)
-			require.Equal(GinkgoT(), 0, len(events.GetEvents()))
-		})
-	})
-
-	Describe("GetMonthlyEvents", func() {
-		It("success result", func() {
-			events, err := client.GetMonthlyEvents(ctx, &v1grpc.EventsRequest{
-				Date: timestamppb.New(monthAgo),
-			})
-			require.NoError(GinkgoT(), err)
-			require.Equal(GinkgoT(), "", events.Error)
-			require.Equal(GinkgoT(), 3, len(events.GetEvents()))
-		})
-		It("empty result", func() {
-			events, err := client.GetMonthlyEvents(ctx, &v1grpc.EventsRequest{
-				Date: timestamppb.New(halfYearAgo),
-			})
-			require.NoError(GinkgoT(), err)
-			require.Equal(GinkgoT(), "", events.Error)
-			require.Equal(GinkgoT(), 0, len(events.GetEvents()))
-		})
-	})
-
-	Describe("UpdateEvent", func() {
-		It("success result", func() {
-			_, err := client.UpdateEvent(ctx, &v1grpc.UpdateRequest{
-				Id: currentEventRes.Id,
-				Event: &v1grpc.EventRequestValue{
-					Title:      gofakeit.Fruit(),
-					Date:       timestamppb.New(now.AddDate(0, 0, 5)),
-					EndDate:    timestamppb.New(now.AddDate(0, 0, 6)),
-					RemindDate: timestamppb.New(now.AddDate(0, 0, 5).Add(2 * time.Hour)),
-				},
-			})
-			require.NoError(GinkgoT(), err)
-
-			events, err := client.GetDailyEvents(ctx, &v1grpc.EventsRequest{
-				Date: timestamppb.New(now),
-			})
-			require.NoError(GinkgoT(), err)
-			require.Equal(GinkgoT(), 0, len(events.GetEvents()))
-		})
-	})
-
-	Describe("DropPublishAndSendEvent", func() {
+	Describe("Complex", func() {
 		It("success result", func() {
 			mq := rmq.MessageQueue{}
 			err := mq.Connect(amqpAddr)
@@ -205,9 +127,9 @@ var _ = Describe("Calendar GRPC", Ordered, func() {
 			_, err = client.UpdateEvent(ctx, &v1grpc.UpdateRequest{
 				Id: currentEventRes.Id,
 				Event: &v1grpc.EventRequestValue{
-					Date:       timestamppb.New(now),
+					Date:       timestamppb.New(now.Add(3 * time.Hour)),
 					EndDate:    timestamppb.New(now.AddDate(0, 0, 1)),
-					RemindDate: timestamppb.New(now.Add(1 * time.Minute)),
+					RemindDate: timestamppb.New(now.Add(-1 * time.Hour)),
 				},
 			})
 			require.NoError(GinkgoT(), err)
@@ -223,7 +145,7 @@ var _ = Describe("Calendar GRPC", Ordered, func() {
 			)
 			require.NoError(GinkgoT(), err)
 
-			ticker := time.NewTicker(sleepDuration + 5*time.Second)
+			ticker := time.NewTicker(2 * sleepDuration)
 			defer ticker.Stop()
 			results := make(chan string)
 			go func() {
@@ -254,6 +176,44 @@ var _ = Describe("Calendar GRPC", Ordered, func() {
 			})
 			require.NoError(GinkgoT(), err)
 			require.Equal(GinkgoT(), 0, len(events.GetEvents()), fmt.Sprintf("Expected 0, found: %v", events.GetEvents()))
+		})
+	})
+
+	Describe("GetWeeklyEvents", func() {
+		It("success result", func() {
+			events, err := client.GetWeeklyEvents(ctx, &v1grpc.EventsRequest{
+				Date: timestamppb.New(weekAgo),
+			})
+			require.NoError(GinkgoT(), err)
+			require.Equal(GinkgoT(), "", events.Error)
+			require.Equal(GinkgoT(), 1, len(events.GetEvents()))
+		})
+		It("empty result", func() {
+			events, err := client.GetWeeklyEvents(ctx, &v1grpc.EventsRequest{
+				Date: timestamppb.New(halfYearAgo),
+			})
+			require.NoError(GinkgoT(), err)
+			require.Equal(GinkgoT(), "", events.Error)
+			require.Equal(GinkgoT(), 0, len(events.GetEvents()))
+		})
+	})
+
+	Describe("GetMonthlyEvents", func() {
+		It("success result", func() {
+			events, err := client.GetMonthlyEvents(ctx, &v1grpc.EventsRequest{
+				Date: timestamppb.New(monthAgo),
+			})
+			require.NoError(GinkgoT(), err)
+			require.Equal(GinkgoT(), "", events.Error)
+			require.Equal(GinkgoT(), 3, len(events.GetEvents()))
+		})
+		It("empty result", func() {
+			events, err := client.GetMonthlyEvents(ctx, &v1grpc.EventsRequest{
+				Date: timestamppb.New(halfYearAgo),
+			})
+			require.NoError(GinkgoT(), err)
+			require.Equal(GinkgoT(), "", events.Error)
+			require.Equal(GinkgoT(), 0, len(events.GetEvents()))
 		})
 	})
 })

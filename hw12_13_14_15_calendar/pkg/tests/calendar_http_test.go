@@ -26,9 +26,9 @@ var _ = Describe("Calendar HTTP", func() {
 	}
 
 	Describe("CreateEvent Error", func() {
-		var checkError func(payload storage.EventDTO)
+		var checkError func(payload storage.Event)
 		BeforeEach(func() {
-			checkError = func(payload storage.EventDTO) {
+			checkError = func(payload storage.Event) {
 				data, err := json.Marshal(&payload)
 				require.NoError(GinkgoT(), err)
 				resp, err := client.Post(rootHTTPURL+"/v1/event", "application/json", bytes.NewReader(data))
@@ -52,18 +52,18 @@ var _ = Describe("Calendar HTTP", func() {
 				UserID:     gofakeit.UUID(),
 				RemindDate: now.Add(1 * time.Minute),
 			}
-			checkError(badEvent)
+			checkError(badEvent.Transfer())
 		})
 		It("add bad remind date event", func() {
 			badEvent := storage.EventDTO{
 				Title:      gofakeit.Hobby(),
 				Date:       now.Add(1 * time.Minute),
-				EndDate:    now.Add(1 * time.Minute),
+				EndDate:    now.Add(1 * time.Hour),
 				Desc:       gofakeit.Phrase(),
 				UserID:     gofakeit.UUID(),
-				RemindDate: now,
+				RemindDate: now.Add(2 * time.Hour),
 			}
-			checkError(badEvent)
+			checkError(badEvent.Transfer())
 		})
 		It("add bad userId event", func() {
 			badEvent := storage.EventDTO{
@@ -72,9 +72,9 @@ var _ = Describe("Calendar HTTP", func() {
 				EndDate:    now.Add(2 * time.Minute),
 				Desc:       gofakeit.Phrase(),
 				UserID:     "bad",
-				RemindDate: now.Add(1 * time.Minute),
+				RemindDate: now.Add(-1 * time.Minute),
 			}
-			checkError(badEvent)
+			checkError(badEvent.Transfer())
 		})
 	})
 	Describe("Id Error", func() {

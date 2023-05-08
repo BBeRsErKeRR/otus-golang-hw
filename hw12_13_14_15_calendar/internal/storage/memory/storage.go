@@ -99,6 +99,18 @@ func (st *Storage) GetEventsByPeriod(ctx context.Context, start, end time.Time) 
 	return res, nil
 }
 
+func (st *Storage) GetKindReminder(ctx context.Context, date time.Time) ([]storage.Event, error) {
+	st.mu.Lock()
+	defer st.mu.Unlock()
+	res := make([]storage.Event, 0, len(st.events))
+	for _, e := range st.events {
+		if e.RemindDate.Before(date) && e.Date.After(date) {
+			res = append(res, e)
+		}
+	}
+	return res, nil
+}
+
 func (st *Storage) GetDailyEvents(ctx context.Context, date time.Time) ([]storage.Event, error) {
 	return st.GetEventsByPeriod(ctx, date, date.AddDate(0, 0, 1))
 }
