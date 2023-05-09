@@ -4,21 +4,21 @@ out_paths = ["stdout"]
 err_paths = ["stderr"]
 
 [app.http_server]
-host = "localhost"
+host = "0.0.0.0"
 port = "5000"
 read_timeout = "200ms"
 write_timeout = "200ms"
 read_header_timeout = "200ms"
 
 [app.grpc_server]
-host = "localhost"
+host = "0.0.0.0"
 port = "5080"
 
 [app.database]
 storage = "sql"
 driver = "postgres"
 host = "localhost"
-port = "5532"
+port = "5432"
 db = "calendar"
 user = "calendar"
 password = "developer"

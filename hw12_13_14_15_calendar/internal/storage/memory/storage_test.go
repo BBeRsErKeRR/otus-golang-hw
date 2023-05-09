@@ -14,7 +14,8 @@ import (
 
 var errEmpty = errors.New("empty result")
 
-func TestStorage(t *testing.T) {
+func TestStorage(t *testing.T) { //nolint:gocognit
+	now := time.Now()
 	ctx := context.Background()
 	testcases := []struct {
 		Name   string
@@ -25,12 +26,8 @@ func TestStorage(t *testing.T) {
 		{
 			Name: "check crud",
 			Event: storage.Event{
-				Title:      "some event 1",
-				Desc:       "this is the test event 1",
-				UserID:     uuid.New().String(),
-				Date:       time.Now(),
-				EndDate:    time.Now().Add(4 * time.Hour),
-				RemindDate: time.Now().Add(3 * time.Hour),
+				Title: "some event 1", Desc: "this is the test event 1", UserID: uuid.New().String(),
+				Date: now, EndDate: now.Add(4 * time.Hour), RemindDate: now.Add(-3 * time.Hour),
 			},
 			Action: func(ctx context.Context, st *Storage, event storage.Event) error {
 				_, err := st.CreateEvent(ctx, event)
@@ -74,12 +71,8 @@ func TestStorage(t *testing.T) {
 		{
 			Name: "check duplicate error",
 			Event: storage.Event{
-				Title:      "some event 1",
-				Desc:       "this is the test event 1",
-				UserID:     uuid.New().String(),
-				Date:       time.Now(),
-				EndDate:    time.Now().Add(4 * time.Hour),
-				RemindDate: time.Now().Add(3 * time.Hour),
+				Title: "some event 2", Desc: "this is the test event 2", UserID: uuid.New().String(),
+				Date: now, EndDate: now.Add(4 * time.Hour), RemindDate: now.Add(-3 * time.Hour),
 			},
 			Err: storage.ErrDuplicateEvent,
 			Action: func(ctx context.Context, st *Storage, event storage.Event) error {
@@ -98,6 +91,27 @@ func TestStorage(t *testing.T) {
 				return nil
 			},
 		},
+		{
+			Name: "check kindReminder",
+			Event: storage.Event{
+				Title: "some event 3", Desc: "this is the test event 3", UserID: uuid.New().String(),
+				Date: now, EndDate: now.Add(4 * time.Hour), RemindDate: now.Add(-3 * time.Minute),
+			},
+			Action: func(ctx context.Context, st *Storage, event storage.Event) error {
+				_, err := st.CreateEvent(ctx, event)
+				if err != nil {
+					return err
+				}
+				events, err := st.GetKindReminder(ctx, now.Add(-5*time.Second))
+				if err != nil {
+					return err
+				}
+				if len(events) == 0 {
+					return errEmpty
+				}
+				return nil
+			},
+		},
 	}
 
 	for _, testcase := range testcases {
@@ -110,41 +124,26 @@ func TestStorage(t *testing.T) {
 
 	t.Run("some get check", func(t *testing.T) {
 		title := "not exist"
-		date := time.Now().Add(-48 * time.Hour)
-		endDate := time.Now().Add(-24 * time.Hour)
-		testDate := time.Now().Add(-4 * time.Minute)
+		date := now.Add(-48 * time.Hour)
+		endDate := now.Add(-24 * time.Hour)
+		testDate := now.Add(-4 * time.Minute)
 		memStorage := Storage{
 			events: map[string]storage.Event{
 				uuid.New().String(): {
-					Title:      title,
-					UserID:     uuid.New().String(),
-					Date:       date,
-					EndDate:    endDate,
-					RemindDate: time.Now().Add(-26 * time.Hour),
+					Title: title, UserID: uuid.New().String(),
+					Date: date, EndDate: endDate, RemindDate: now.Add(-26 * time.Hour),
 				},
 				uuid.New().String(): {
-					Title:      "some event 1",
-					Desc:       "this is the test event 1",
-					UserID:     uuid.New().String(),
-					Date:       time.Now(),
-					EndDate:    time.Now().Add(4 * time.Hour),
-					RemindDate: time.Now().Add(3 * time.Hour),
+					Title: "te2", Desc: "te2", UserID: uuid.New().String(),
+					Date: now, EndDate: now.Add(4 * time.Hour), RemindDate: now.Add(3 * time.Hour),
 				},
 				uuid.New().String(): {
-					Title:      "some event 2",
-					Desc:       "this is the test event 2",
-					UserID:     uuid.New().String(),
-					Date:       time.Now().Add(24 * time.Hour),
-					EndDate:    time.Now().Add(26 * time.Hour),
-					RemindDate: time.Now().Add(25 * time.Hour),
+					Title: "some event 2", Desc: "this is the test event 2", UserID: uuid.New().String(),
+					Date: now.Add(24 * time.Hour), EndDate: now.Add(26 * time.Hour), RemindDate: now.Add(25 * time.Hour),
 				},
 				uuid.New().String(): {
-					Title:      "some event 3",
-					Desc:       "this is the test event 3",
-					UserID:     uuid.New().String(),
-					Date:       time.Now().AddDate(0, 0, 14),
-					EndDate:    time.Now().AddDate(0, 0, 15),
-					RemindDate: time.Now().AddDate(0, 0, 14).Add(3 * time.Hour),
+					Title: "some event 3", Desc: "this is the test event 3", UserID: uuid.New().String(),
+					Date: now.AddDate(0, 0, 14), EndDate: now.AddDate(0, 0, 15), RemindDate: now.AddDate(0, 0, 14).Add(3 * time.Hour),
 				},
 			},
 		}

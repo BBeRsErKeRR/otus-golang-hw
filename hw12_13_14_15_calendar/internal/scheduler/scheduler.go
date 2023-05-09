@@ -38,10 +38,9 @@ func (a *App) Obsolescence(ctx context.Context) error {
 }
 
 func (a *App) PublishEvents(ctx context.Context) {
-	startDate := time.Now().Add(-a.duration)
-	endDate := time.Now()
+	date := time.Now().Add(-a.duration)
 
-	events, err := a.sU.GetEventsByPeriod(ctx, startDate, endDate)
+	events, err := a.sU.GetKindReminder(ctx, date)
 	if err != nil {
 		a.logger.Error("fail get event", zap.Error(err))
 	}
@@ -66,11 +65,11 @@ func (a *App) Run(ctx context.Context) error {
 	defer a.logger.Info("Stopping scheduler")
 	for {
 		go func() {
-			a.PublishEvents(ctx)
 			err := a.Obsolescence(ctx)
 			if err != nil {
 				a.logger.Error(fmt.Sprintf("fail delete old events %s", err))
 			}
+			a.PublishEvents(ctx)
 			a.logger.Info(fmt.Sprintf("Next operation start after %s", a.duration))
 		}()
 

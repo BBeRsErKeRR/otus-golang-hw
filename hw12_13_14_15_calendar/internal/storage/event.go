@@ -13,7 +13,8 @@ var (
 	ErrEventTitle         = errors.New("empty event title")
 	ErrEventDate          = errors.New("empty event date")
 	ErrEventEndDate       = errors.New("empty event end date")
-	ErrEventUserID        = errors.New("empty event user id")
+	ErrEventUserID        = errors.New("bad event user id")
+	ErrEventID            = errors.New("bad event id")
 	ErrNotExist           = errors.New("event not exist")
 	ErrNotValidRemindDate = errors.New("remind date invalid")
 	ErrNotValidEventDate  = errors.New("date is more then end date")
@@ -62,7 +63,7 @@ func (u *EventUseCase) validateEvent(e Event) error {
 		return ErrEventEndDate
 	case e.Date.IsZero():
 		return ErrEventDate
-	case !e.RemindDate.IsZero() && (!e.RemindDate.After(e.Date) || !e.RemindDate.Before(e.EndDate)):
+	case !e.RemindDate.IsZero() && e.Date.Before(e.RemindDate):
 		return ErrNotValidRemindDate
 	}
 
@@ -116,6 +117,9 @@ func (u *EventUseCase) Create(ctx context.Context, event Event) (string, error) 
 }
 
 func (u *EventUseCase) Update(ctx context.Context, eventID string, event Event) error {
+	if _, err := uuid.Parse(eventID); err != nil {
+		return ErrEventID
+	}
 	mEvent, err := u.getAndUpdateEventValue(ctx, eventID, event)
 	if err != nil {
 		return fmt.Errorf("EventUseCase - UpdateEvent - u.storage.UpdateEvent: %w", err)
@@ -132,6 +136,9 @@ func (u *EventUseCase) Update(ctx context.Context, eventID string, event Event) 
 }
 
 func (u *EventUseCase) Delete(ctx context.Context, eventID string) error {
+	if _, err := uuid.Parse(eventID); err != nil {
+		return ErrEventID
+	}
 	err := u.storage.DeleteEvent(ctx, eventID)
 	if err != nil {
 		return fmt.Errorf("EventUseCase - DeleteEvent - u.storage.DeleteEvent: %w", err)
@@ -167,6 +174,14 @@ func (u *EventUseCase) GetMonthlyEvents(ctx context.Context, date time.Time) ([]
 	events, err := u.storage.GetMonthlyEvents(ctx, date)
 	if err != nil {
 		return nil, fmt.Errorf("EventUseCase - MonthlyEvents - u.storage.MonthlyEvents: %w", err)
+	}
+	return events, nil
+}
+
+func (u *EventUseCase) GetKindReminder(ctx context.Context, date time.Time) ([]Event, error) {
+	events, err := u.storage.GetKindReminder(ctx, date)
+	if err != nil {
+		return nil, fmt.Errorf("EventUseCase - GetKindReminder - u.storage.GetKindReminder: %w", err)
 	}
 	return events, nil
 }

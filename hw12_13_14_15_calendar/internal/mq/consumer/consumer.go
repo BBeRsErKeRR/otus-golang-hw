@@ -18,4 +18,5 @@ type Consumer interface {
 	Connect(context.Context) error
 	Close(context.Context) error
 	Consume(context.Context, func(context.Context, []byte)) error
+	PublishStatus(context.Context, []byte) error
 }

@@ -32,6 +32,10 @@ func (ts *tStorage) DeleteEventsBeforeDate(ctx context.Context, date time.Time) 
 	return nil
 }
 
+func (ts *tStorage) GetKindReminder(ctx context.Context, date time.Time) ([]Event, error) {
+	return []Event{}, nil
+}
+
 func (ts *tStorage) GetEventsByPeriod(ctx context.Context, start, date time.Time) ([]Event, error) {
 	return []Event{}, nil
 }
@@ -86,9 +90,17 @@ func TestStorage(t *testing.T) {
 			Name:  "invalid date",
 			Event: Event{Title: "some event 1", UserID: uuid.New().String(), EndDate: time.Now().Add(22 * time.Hour)},
 			Action: func(ctx context.Context, u *EventUseCase, event Event) error {
-				return u.Update(context.Background(), "", event)
+				return u.Update(context.Background(), uuid.New().String(), event)
 			},
 			Error: ErrEventDate,
+		},
+		{
+			Name:  "invalid id",
+			Event: Event{Title: "some event 1", UserID: uuid.New().String(), EndDate: time.Now().Add(22 * time.Hour)},
+			Action: func(ctx context.Context, u *EventUseCase, event Event) error {
+				return u.Update(context.Background(), "", event)
+			},
+			Error: ErrEventID,
 		},
 	}
 

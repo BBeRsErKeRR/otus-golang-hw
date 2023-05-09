@@ -1,0 +1,8 @@
+bin/*
+docs/*
+*.md
+make/*
+Makefile
+coverprofile.out
+pkg/tests/*
+.git

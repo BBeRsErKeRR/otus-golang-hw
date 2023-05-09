@@ -1,0 +1,84 @@
+version: '3.7'
+services:
+#===============MIGRATOR==============#
+ 
+  migrator:
+    build:
+      context: ${DOCKER_CONTEXT_PATH}
+      dockerfile: ${DOCKER_MAKE_DIR}/build/migrator/Dockerfile
+    networks:
+      calendar:
+
+#===============CALENDAR==============#
+
+  calendar:
+    image: ${DOCKER_REGISTRY}calendar_app
+    build:
+      # cache_from:
+      #   - golang:1.19
+      #   - alpine:3.9
+      #   - ${DOCKER_REGISTRY}calendar_app
+      context: ${DOCKER_CONTEXT_PATH}
+      dockerfile: ${DOCKER_MAKE_DIR}/build/app/Dockerfile
+      args:
+        DOCKER_BUILDKIT: ${DOCKER_BUILDKIT}
+        BIN_FILE: /opt/calendar/calendar-app
+        MAIN_SRC: cmd/calendar/*
+        CONFIG_SRC: configs/config.toml
+        LDFLAGS: ${LDFLAGS}
+    ports:
+      - "${APP_HTTP_PORT:-5000}:5000"
+      - "${APP_GRPC_PORT:-5080}:5080"
+    depends_on:
+      migrator:
+        condition: service_completed_successfully
+    networks:
+      calendar:
+
+#===============SENDER==============#
+
+  sender:
+    image: ${DOCKER_REGISTRY}calendar_sender
+    build:
+      # cache_from:
+      #   - golang:1.19
+      #   - alpine:3.9
+      #   - ${DOCKER_REGISTRY}calendar_sender
+      context: ${DOCKER_CONTEXT_PATH}
+      dockerfile: ${DOCKER_MAKE_DIR}/build/app/Dockerfile
+      args:
+        DOCKER_BUILDKIT: ${DOCKER_BUILDKIT}
+        BIN_FILE: /opt/calendar/sender-app
+        MAIN_SRC: cmd/sender/*
+        CONFIG_SRC: configs/config_sender.toml
+        LDFLAGS: ${LDFLAGS}
+    networks:
+      calendar:
+
+#===============SENDER==============#
+
+  scheduler:
+    image: ${DOCKER_REGISTRY}calendar_scheduler
+    build:
+      # cache_from: 
+      #   - golang:1.19
+      #   - alpine:3.9
+      #   - ${DOCKER_REGISTRY}calendar_scheduler
+      context: ${DOCKER_CONTEXT_PATH}
+      dockerfile: ${DOCKER_MAKE_DIR}/build/app/Dockerfile
+      args:
+        DOCKER_BUILDKIT: ${DOCKER_BUILDKIT}
+        BIN_FILE: /opt/calendar/scheduler-app
+        MAIN_SRC: cmd/scheduler/*
+        CONFIG_SRC: configs/config_scheduler.toml
+        LDFLAGS: ${LDFLAGS}
+    depends_on:
+      migrator:
+        condition: service_completed_successfully
+    networks:
+      calendar:
+
+#====================================#
+networks:
+  calendar:
+    driver: bridge

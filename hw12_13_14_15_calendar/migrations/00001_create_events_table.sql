@@ -15,6 +15,12 @@ CREATE TABLE IF NOT EXISTS events
 
 CREATE INDEX event_date_idx
     ON events (date);
+
+CREATE INDEX event_remind_date_idx
+    ON events (remind_date);
+
+CREATE INDEX event_end_date_idx
+    ON events (end_date);
 -- +goose StatementEnd
 
 -- +goose Down
